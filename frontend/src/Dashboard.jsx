@@ -1,22 +1,18 @@
 import { useState, useEffect } from 'react';
 
 export default function Dashboard() {
-    // --- ESTADOS DO SISTEMA ---
     const [despesas, setDespesas] = useState([]);
     const [totalGastos, setTotalGastos] = useState(0);
     const [carregando, setCarregando] = useState(true);
     const [categorias, setCategorias] = useState([]);
     const [gastosFixos, setGastosFixos] = useState([]);
 
-    // Estado para o Menu Responsivo (Celular)
     const [menuMobileAberto, setMenuMobileAberto] = useState(false);
 
-    // Estados para Paginação
     const [paginaDespesas, setPaginaDespesas] = useState(1);
     const [paginaFixos, setPaginaFixos] = useState(1);
     const itensPorPagina = 6;
 
-    // Modais e Formulários
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [enviandoForm, setEnviandoForm] = useState(false);
     const [novaDespesa, setNovaDespesa] = useState({ descricao: '', valorReais: '', dataDespesa: new Date().toISOString().split('T')[0], idCategoria: '', metodoPagamento: 'PIX' });
@@ -27,13 +23,12 @@ export default function Dashboard() {
 
     const [isModalCategoriasOpen, setIsModalCategoriasOpen] = useState(false);
 
-    // --- FUNÇÕES DE API (Lógica de Banco de Dados) ---
     const buscarDados = async () => {
         try {
             const token = localStorage.getItem('token');
             const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-            const respostaDespesas = await fetch(`${import.meta.env.VITE_API_URL}/despesas`, { method: 'GET', headers });
+            const respostaDespesas = await fetch(`${import.meta.env.VITE_API_URL}/despesas?size=1000`, { method: 'GET', headers });
             if (respostaDespesas.ok) {
                 const pagina = await respostaDespesas.json();
                 setDespesas(pagina.content || []);
@@ -42,7 +37,7 @@ export default function Dashboard() {
                 localStorage.removeItem('token'); window.location.href = '/';
             }
 
-            const respostaCategorias = await fetch(`${import.meta.env.VITE_API_URL}/categorias`, { method: 'GET', headers });
+            const respostaCategorias = await fetch(`${import.meta.env.VITE_API_URL}/categorias?size=1000`, { method: 'GET', headers });
             if (respostaCategorias.ok) {
                 const dadosCat = await respostaCategorias.json();
                 const listaCategorias = dadosCat.content || dadosCat || [];
@@ -54,7 +49,7 @@ export default function Dashboard() {
             }
 
             try {
-                const respostaFixos = await fetch(`${import.meta.env.VITE_API_URL}/gastos-fixos`, { method: 'GET', headers });
+                const respostaFixos = await fetch(`${import.meta.env.VITE_API_URL}/gastos-fixos?size=1000`, { method: 'GET', headers });
                 if (respostaFixos.ok) setGastosFixos((await respostaFixos.json()).content || []);
             } catch (e) {
                 console.error("Erro ao buscar gastos fixos:", e);
@@ -183,7 +178,6 @@ export default function Dashboard() {
         }
     };
 
-    // --- FORMATAÇÕES E CÁLCULOS VISUAIS ---
     const formatarMoeda = (valor) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
     const formatarData = (dataIso) => { if (!dataIso) return '--/--/----'; return new Date(dataIso).toLocaleDateString('pt-BR', {timeZone: 'UTC'}); };
 
@@ -213,7 +207,6 @@ export default function Dashboard() {
     const despesasAtuais = despesasOrdenadas.slice((paginaDespesas - 1) * itensPorPagina, paginaDespesas * itensPorPagina);
     const fixosAtuais = fixosOrdenados.slice((paginaFixos - 1) * itensPorPagina, paginaFixos * itensPorPagina);
 
-    // Classes Tailwind para Responsividade
     const cardClass = "bg-[#131826] border border-gray-800/60 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-7 shadow-2xl relative";
     const sidebarButton = "w-full h-[60px] px-6 bg-[#1a2133] hover:bg-sky-500 hover:text-white rounded-2xl transition-all font-bold text-sm text-gray-300 text-left flex items-center justify-between shrink-0 group";
     const inputClass = "w-full px-4 py-3 md:px-5 md:py-3.5 bg-[#0b0f19] text-white font-bold border border-gray-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none placeholder:text-gray-600";
@@ -236,9 +229,6 @@ export default function Dashboard() {
                 />
             )}
 
-            {/* ==============================
-                    MENU LATERAL (SIDEBAR)
-            ============================== */}
             <aside className={`fixed inset-y-0 left-0 z-50 w-[280px] md:w-[340px] bg-[#131826] border-r border-gray-800/50 flex flex-col p-6 md:p-8 shadow-2xl shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${menuMobileAberto ? 'translate-x-0' : '-translate-x-full'}`}>
 
                 <button
@@ -321,10 +311,6 @@ export default function Dashboard() {
                 </button>
             </aside>
 
-
-            {/* ==========================================
-                CONTEÚDO PRINCIPAL (DASHBOARD)
-            ========================================== */}
             <main className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-10 relative w-full">
 
                 <div className="hidden md:block absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-sky-900/10 rounded-full blur-[120px] pointer-events-none"></div>
@@ -500,10 +486,6 @@ export default function Dashboard() {
                 </div>
             </main>
 
-
-            {/* ==========================================
-                                MODAIS
-            ========================================== */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-3 sm:p-4 z-[60] transition-opacity backdrop-blur-sm" onClick={() => setIsModalOpen(false)}>
                     <div className={`${cardClass} w-full max-w-xl max-h-[90vh] overflow-y-auto custom-scrollbar`} onClick={(e) => e.stopPropagation()}>
