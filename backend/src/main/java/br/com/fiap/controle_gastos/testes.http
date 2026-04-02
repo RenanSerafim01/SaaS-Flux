@@ -1,0 +1,119 @@
+//TESTE CATEGORIA
+
+### Criar uma nova Categoria (POST)
+POST http://localhost:8080/categorias
+Content-Type: application/json
+
+{
+  "nome": "Viagens"
+}
+
+### Listar todas as categorias (GET All)
+GET http://localhost:8080/categorias
+Accept: application/json
+
+### Buscar uma categoria específica (GET by ID)
+# Lembre-se de trocar o ID pelo número gerado no POST ali de cima!
+GET http://localhost:8080/categorias/7
+Accept: application/json
+
+### Atualizar uma categoria (PUT)
+# Vai trocar o nome "Viagens" para "Viagens Internacionais"
+PUT http://localhost:8080/categorias/6
+Content-Type: application/json
+
+{
+  "nome": "Viagens Internacionais"
+}
+
+### Deletar uma categoria (DELETE)
+DELETE http://localhost:8080/categorias/7
+
+
+
+### Listar categorias paginadas (Padrão: 10 itens, ordenado por nome)
+GET http://localhost:8080/categorias
+Accept: application/json
+
+### Listar despesas paginadas (Avançado: Forçando trazer só 2 itens, na página 0, ordenado do mais caro pro mais barato)
+GET http://localhost:8080/despesas?size=2&page=0&sort=valorCentavos,desc
+Accept: application/json
+
+
+
+//TESTES DESPESA
+
+### Criar uma nova Despesa (POST)
+POST http://localhost:8080/despesas
+Content-Type: application/json
+
+{
+  "descricao": "Mouse gamer",
+  "valorCentavos": 15000,
+  "dataDespesa": "2026-03-22T10:00:00-03:00",
+  "metodoPagamento": "PIX",
+  "idCategoria": 7
+}
+
+### Listar todas as despesas (GET All)
+GET http://localhost:8080/despesas
+Accept: application/json
+
+### Buscar uma despesa específica por ID (GET by ID)
+# Lembre-se de trocar o "1" pelo ID gerado no POST ali de cima!
+GET http://localhost:8080/despesas/1
+Accept: application/json
+
+### Atualizar uma despesa existente (PUT)
+# Vai atualizar a descrição e o valor da despesa de ID 1
+PUT http://localhost:8080/despesas/1
+Content-Type: application/json
+
+{
+  "descricao": "Mouse gamer RGB boladão",
+  "valorCentavos": 18500,
+  "dataDespesa": "2026-03-22T10:00:00-03:00",
+  "metodoPagamento": "CREDITO",
+  "idCategoria": 7
+}
+
+### Deletar uma despesa (DELETE)
+DELETE http://localhost:8080/despesas/7
+
+
+### Dashboard: Somar total gasto em uma categoria
+# Vamos usar o ID 1 (Alimentação) ou 2 (Lazer) que você já tem no banco
+GET http://localhost:8080/despesas/total-por-categoria/2
+Accept: application/json
+
+//SEGURANÇA
+
+### Efetuar Login e gerar Token JWT
+POST http://localhost:8080/login
+Content-Type: application/json
+
+{
+  "login": "renan@fiap.com.br",
+  "senha": "123456"
+}
+
+### Listar todas as categorias (Protegido!)
+GET http://localhost:8080/categorias
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJBUEkgQ29udHJvbGUgZGUgR2FzdG9zIiwic3ViIjoicmVuYW5AZmlhcC5jb20uYnIiLCJleHAiOjE3NzQzNzk2MjZ9.fCDKZsWQ5bJGV9y6SWAAWRtFiH4aEI2PUsTKMQO1BgY
+
+
+### Cadastrar Nova Despesa
+POST http://localhost:8080/despesas
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJBUEkgQ29udHJvbGUgZGUgR2FzdG9zIiwic3ViIjoicmVuYW5AZmlhcC5jb20uYnIiLCJleHAiOjE3NzQzNzk2MjZ9.fCDKZsWQ5bJGV9y6SWAAWRtFiH4aEI2PUsTKMQO1BgY
+
+{
+  "descricao": "Counter-Strike 2 - Skins",
+  "valorCentavos": 15050,
+  "dataDespesa": "2026-03-24T14:00:00-03:00",
+  "idCategoria": 3,
+  "metodoPagamento": "PIX"
+}
+
+
+
