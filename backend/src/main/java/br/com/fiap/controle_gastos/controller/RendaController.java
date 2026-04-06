@@ -42,4 +42,11 @@ public class RendaController {
         var page = repository.findAllByUsuarioId(usuarioLogado.getId(), paginacao);
         return ResponseEntity.ok(page);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> excluir(@PathVariable Long id) {
+        repository.deleteById(id);
+        return ResponseEntity.ok().build();
+    }
+
 }

@@ -244,7 +244,7 @@ function LandingPage() {
                             {!isLoginMode && !isRecuperarMode && (
                                 <div>
                                     <label className="block mb-2 text-[9px] md:text-[10px] font-black text-gray-500 tracking-widest uppercase">Nome Completo</label>
-                                    <input type="text" value={nome} onChange={(e) => setNome(e.target.value)} className="w-full px-4 md:px-5 py-3 md:py-3.5 bg-[#0b0f19] text-white font-bold text-sm border border-gray-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-gray-700" placeholder="João da Silva" required />
+                                    <input type="text" value={nome} onChange={(e) => setNome(e.target.value)} className="w-full px-4 md:px-5 py-3 md:py-3.5 bg-[#0b0f19] text-white font-bold text-sm border border-gray-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-gray-700" placeholder="Renan da Silva" required />
                                 </div>
                             )}
 
