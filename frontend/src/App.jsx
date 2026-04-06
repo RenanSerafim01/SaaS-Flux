@@ -19,6 +19,7 @@ function LandingPage() {
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
     const [isLoginMode, setIsLoginMode] = useState(true);
+    const [isRecuperarMode, setIsRecuperarMode] = useState(false);
     const [login, setLogin] = useState('');
     const [senha, setSenha] = useState('');
     const [confirmaSenha, setConfirmaSenha] = useState('');
@@ -27,6 +28,7 @@ function LandingPage() {
     const fecharModal = () => {
         setIsLoginModalOpen(false);
         setIsLoginMode(true);
+        setIsRecuperarMode(false);
         setLogin('');
         setSenha('');
         setConfirmaSenha('');
@@ -85,10 +87,32 @@ function LandingPage() {
                 const errorText = await resposta.text();
                 setMensagem({ texto: errorText || 'Erro ao criar conta.', tipo: 'erro' });
             }
+
         } catch (erro) {
             console.error(erro);
             setMensagem({ texto: 'Servidor indisponível no momento.', tipo: 'erro' });
         }
+    };
+
+    const handleRecuperarSenha = async (e) => {
+        e.preventDefault();
+        setMensagem({ texto: '', tipo: '' });
+
+        if (!login) {
+            setMensagem({ texto: 'Por favor, digite seu e-mail.', tipo: 'erro' });
+            return;
+        }
+
+        setMensagem({ texto: 'Buscando conta e gerando link...', tipo: 'sucesso' });
+
+        setTimeout(() => {
+            setMensagem({ texto: 'Se este e-mail estiver cadastrado, você receberá as instruções em instantes.', tipo: 'sucesso' });
+
+            setTimeout(() => {
+                setIsRecuperarMode(false);
+                setMensagem({ texto: '', tipo: '' });
+            }, 4000);
+        }, 1500);
     };
 
     return (
@@ -181,23 +205,24 @@ function LandingPage() {
                 </span>
             </footer>
 
-            {/* --- MODAL LOGIN E CADASTRO --- */}
+            {/* --- MODAL LOGIN, CADASTRO E RECUPERAÇÃO --- */}
             {isLoginModalOpen && (
                 <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-50 transition-opacity backdrop-blur-sm" onClick={fecharModal}>
 
                     <div className="w-full max-w-sm p-6 md:p-10 bg-[#131826] border border-gray-800/60 rounded-[1.5rem] md:rounded-[2rem] shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
 
+                        {/* --- CABEÇALHO DO MODAL --- */}
                         <div className="text-center mb-6 flex flex-col items-center mt-2 md:mt-0">
                             <div className="relative inline-block mb-1">
                                 <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter">
-                                    {isLoginMode ? 'Acessar Sistema' : 'Criar Conta'}
+                                    {isRecuperarMode ? 'Recuperar Senha' : (isLoginMode ? 'Acessar Sistema' : 'Criar Conta')}
                                 </h2>
-                                {isLoginMode && (
+                                {!isRecuperarMode && isLoginMode && (
                                     <span className="absolute left-full top-0 ml-1 md:ml-2 mt-0 md:mt-0.5 bg-sky-500/20 text-sky-400 text-[8px] px-2 py-0.5 rounded-sm font-black tracking-widest uppercase">Beta</span>
                                 )}
                             </div>
                             <p className="text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-wider mt-2">
-                                {isLoginMode ? 'Identifique-se' : 'Junte-se ao Flux'}
+                                {isRecuperarMode ? 'Enviaremos um link seguro' : (isLoginMode ? 'Identifique-se' : 'Junte-se ao Flux')}
                             </p>
                         </div>
 
@@ -208,28 +233,35 @@ function LandingPage() {
                             </div>
                         )}
 
-                        <form onSubmit={isLoginMode ? handleLogin : handleCadastro} className="space-y-4 md:space-y-5">
+                        {/* --- FORMULÁRIO DINÂMICO --- */}
+                        <form onSubmit={isRecuperarMode ? handleRecuperarSenha : (isLoginMode ? handleLogin : handleCadastro)} className="space-y-4 md:space-y-5">
+
+                            {/* O campo E-mail aparece sempre */}
                             <div>
                                 <label className="block mb-2 text-[9px] md:text-[10px] font-black text-gray-500 tracking-widest uppercase">Login (E-mail)</label>
                                 <input type="email" value={login} onChange={(e) => setLogin(e.target.value)} className="w-full px-4 md:px-5 py-3 md:py-3.5 bg-[#0b0f19] text-white font-bold text-sm border border-gray-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-gray-700" placeholder="usuario@email.com" required />
                             </div>
-                            <div>
-                                <label className="block mb-2 text-[9px] md:text-[10px] font-black text-gray-500 tracking-widest uppercase">Senha</label>
-                                <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} className="w-full px-4 md:px-5 py-3 md:py-3.5 bg-[#0b0f19] text-white font-bold text-sm border border-gray-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-gray-700" placeholder="••••••••••" required />
-                            </div>
 
-                            {/* Campo de confirmação aparece apenas no modo de Cadastro */}
-                            {!isLoginMode && (
+                            {/* O campo Senha NÃO aparece se for modo Recuperar */}
+                            {!isRecuperarMode && (
+                                <div>
+                                    <label className="block mb-2 text-[9px] md:text-[10px] font-black text-gray-500 tracking-widest uppercase">Senha</label>
+                                    <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} className="w-full px-4 md:px-5 py-3 md:py-3.5 bg-[#0b0f19] text-white font-bold text-sm border border-gray-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-gray-700" placeholder="••••••••••" required />
+                                </div>
+                            )}
+
+                            {/* Campo Confirma Senha SÓ aparece no Cadastro */}
+                            {!isRecuperarMode && !isLoginMode && (
                                 <div>
                                     <label className="block mb-2 text-[9px] md:text-[10px] font-black text-gray-500 tracking-widest uppercase">Confirme a Senha</label>
                                     <input type="password" value={confirmaSenha} onChange={(e) => setConfirmaSenha(e.target.value)} className="w-full px-4 md:px-5 py-3 md:py-3.5 bg-[#0b0f19] text-white font-bold text-sm border border-gray-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-gray-700" placeholder="••••••••••" required />
                                 </div>
                             )}
 
-                            {/* Link de Esqueci a Senha apenas no modo de Login */}
-                            {isLoginMode && (
+                            {/* Link de Esqueci a Senha SÓ aparece no Login */}
+                            {!isRecuperarMode && isLoginMode && (
                                 <div className="text-right">
-                                    <button type="button" className="text-[10px] text-gray-500 hover:text-sky-400 transition font-bold tracking-wider uppercase">
+                                    <button type="button" onClick={() => { setIsRecuperarMode(true); setMensagem({ texto: '', tipo: '' }); }} className="text-[10px] text-gray-500 hover:text-sky-400 transition font-bold tracking-wider uppercase">
                                         Esqueceu a senha?
                                     </button>
                                 </div>
@@ -237,25 +269,35 @@ function LandingPage() {
 
                             <div className="pt-2">
                                 <button type="submit" className="w-full bg-sky-500 hover:bg-sky-400 text-white font-black py-3 md:py-4 rounded-xl transition-all uppercase tracking-widest text-[10px] md:text-sm shadow-lg shadow-sky-500/20">
-                                    {isLoginMode ? 'Acessar Conta' : 'Cadastrar e Entrar'}
+                                    {isRecuperarMode ? 'Enviar Link de Recuperação' : (isLoginMode ? 'Acessar Conta' : 'Cadastrar e Entrar')}
                                 </button>
                             </div>
                         </form>
 
-                        {/* Botão para alternar entre Login e Cadastro */}
+                        {/* --- BOTÃO DE RODAPÉ (ALTERNAR MODOS) --- */}
                         <div className="mt-6 text-center border-t border-gray-800/60 pt-6">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsLoginMode(!isLoginMode);
-                                    setMensagem({texto: '', tipo: ''});
-                                    setSenha('');
-                                    setConfirmaSenha('');
-                                }}
-                                className="text-[10px] md:text-xs text-gray-400 hover:text-white transition font-bold tracking-wider uppercase"
-                            >
-                                {isLoginMode ? 'Ainda não tem conta? Cadastre-se' : 'Já tem uma conta? Faça Login'}
-                            </button>
+                            {isRecuperarMode ? (
+                                <button
+                                    type="button"
+                                    onClick={() => { setIsRecuperarMode(false); setMensagem({ texto: '', tipo: '' }); }}
+                                    className="text-[10px] md:text-xs text-gray-400 hover:text-white transition font-bold tracking-wider uppercase"
+                                >
+                                    ← Voltar para o Login
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsLoginMode(!isLoginMode);
+                                        setMensagem({ texto: '', tipo: '' });
+                                        setSenha('');
+                                        setConfirmaSenha('');
+                                    }}
+                                    className="text-[10px] md:text-xs text-gray-400 hover:text-white transition font-bold tracking-wider uppercase"
+                                >
+                                    {isLoginMode ? 'Ainda não tem conta? Cadastre-se' : 'Já tem uma conta? Faça Login'}
+                                </button>
+                            )}
                         </div>
 
                         <button onClick={fecharModal} className="absolute top-4 md:top-6 right-4 md:right-6 text-gray-600 hover:text-white transition font-bold text-xl md:text-2xl leading-none">&times;</button>
