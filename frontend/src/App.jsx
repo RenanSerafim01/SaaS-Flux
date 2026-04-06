@@ -20,6 +20,8 @@ function LandingPage() {
 
     const [isLoginMode, setIsLoginMode] = useState(true);
     const [isRecuperarMode, setIsRecuperarMode] = useState(false);
+
+    const [nome, setNome] = useState('');
     const [login, setLogin] = useState('');
     const [senha, setSenha] = useState('');
     const [confirmaSenha, setConfirmaSenha] = useState('');
@@ -29,6 +31,7 @@ function LandingPage() {
         setIsLoginModalOpen(false);
         setIsLoginMode(true);
         setIsRecuperarMode(false);
+        setNome(''); // Limpa o nome ao fechar
         setLogin('');
         setSenha('');
         setConfirmaSenha('');
@@ -49,6 +52,9 @@ function LandingPage() {
             if (resposta.ok) {
                 const dados = await resposta.json();
                 localStorage.setItem('token', dados.token);
+
+                localStorage.setItem('nomeUsuario', dados.nome);
+
                 window.location.href = '/dashboard';
             } else {
                 setMensagem({ texto: 'Usuário ou senha incorretos.', tipo: 'erro' });
@@ -72,7 +78,8 @@ function LandingPage() {
             const resposta = await fetch(`${import.meta.env.VITE_API_URL}/cadastro`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ login, senha })
+
+                body: JSON.stringify({ nome, login, senha })
             });
 
             if (resposta.ok) {
@@ -211,7 +218,6 @@ function LandingPage() {
 
                     <div className="w-full max-w-sm p-6 md:p-10 bg-[#131826] border border-gray-800/60 rounded-[1.5rem] md:rounded-[2rem] shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
 
-                        {/* --- CABEÇALHO DO MODAL --- */}
                         <div className="text-center mb-6 flex flex-col items-center mt-2 md:mt-0">
                             <div className="relative inline-block mb-1">
                                 <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter">
@@ -226,23 +232,27 @@ function LandingPage() {
                             </p>
                         </div>
 
-                        {/* --- EXIBIÇÃO DE MENSAGENS --- */}
                         {mensagem.texto && (
                             <div className={`p-3 rounded-xl text-xs font-bold text-center tracking-wide mb-5 border ${mensagem.tipo === 'erro' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
                                 {mensagem.texto}
                             </div>
                         )}
 
-                        {/* --- FORMULÁRIO DINÂMICO --- */}
                         <form onSubmit={isRecuperarMode ? handleRecuperarSenha : (isLoginMode ? handleLogin : handleCadastro)} className="space-y-4 md:space-y-5">
 
-                            {/* O campo E-mail aparece sempre */}
+                            {/* --- CAMPO NOME: APARECE APENAS NO CADASTRO --- */}
+                            {!isLoginMode && !isRecuperarMode && (
+                                <div>
+                                    <label className="block mb-2 text-[9px] md:text-[10px] font-black text-gray-500 tracking-widest uppercase">Nome Completo</label>
+                                    <input type="text" value={nome} onChange={(e) => setNome(e.target.value)} className="w-full px-4 md:px-5 py-3 md:py-3.5 bg-[#0b0f19] text-white font-bold text-sm border border-gray-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-gray-700" placeholder="João da Silva" required />
+                                </div>
+                            )}
+
                             <div>
                                 <label className="block mb-2 text-[9px] md:text-[10px] font-black text-gray-500 tracking-widest uppercase">Login (E-mail)</label>
                                 <input type="email" value={login} onChange={(e) => setLogin(e.target.value)} className="w-full px-4 md:px-5 py-3 md:py-3.5 bg-[#0b0f19] text-white font-bold text-sm border border-gray-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-gray-700" placeholder="usuario@email.com" required />
                             </div>
 
-                            {/* O campo Senha NÃO aparece se for modo Recuperar */}
                             {!isRecuperarMode && (
                                 <div>
                                     <label className="block mb-2 text-[9px] md:text-[10px] font-black text-gray-500 tracking-widest uppercase">Senha</label>
@@ -250,7 +260,6 @@ function LandingPage() {
                                 </div>
                             )}
 
-                            {/* Campo Confirma Senha SÓ aparece no Cadastro */}
                             {!isRecuperarMode && !isLoginMode && (
                                 <div>
                                     <label className="block mb-2 text-[9px] md:text-[10px] font-black text-gray-500 tracking-widest uppercase">Confirme a Senha</label>
@@ -258,7 +267,6 @@ function LandingPage() {
                                 </div>
                             )}
 
-                            {/* Link de Esqueci a Senha SÓ aparece no Login */}
                             {!isRecuperarMode && isLoginMode && (
                                 <div className="text-right">
                                     <button type="button" onClick={() => { setIsRecuperarMode(true); setMensagem({ texto: '', tipo: '' }); }} className="text-[10px] text-gray-500 hover:text-sky-400 transition font-bold tracking-wider uppercase">
@@ -274,7 +282,6 @@ function LandingPage() {
                             </div>
                         </form>
 
-                        {/* --- BOTÃO DE RODAPÉ (ALTERNAR MODOS) --- */}
                         <div className="mt-6 text-center border-t border-gray-800/60 pt-6">
                             {isRecuperarMode ? (
                                 <button
@@ -290,6 +297,7 @@ function LandingPage() {
                                     onClick={() => {
                                         setIsLoginMode(!isLoginMode);
                                         setMensagem({ texto: '', tipo: '' });
+                                        setNome('');
                                         setSenha('');
                                         setConfirmaSenha('');
                                     }}
