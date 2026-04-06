@@ -39,11 +39,14 @@ public class AutenticacaoController {
             var authenticationToken = new UsernamePasswordAuthenticationToken(dados.login(), dados.senha());
             var authentication = manager.authenticate(authenticationToken);
 
+            var usuarioLogado = (Usuario) authentication.getPrincipal();
+
             log.debug("Credenciais validadas com sucesso. Gerando token JWT...");
-            var tokenJWT = tokenService.gerarToken((Usuario) authentication.getPrincipal());
+            var tokenJWT = tokenService.gerarToken(usuarioLogado);
 
             log.info("Autenticação concluída com sucesso para o usuário: {}", dados.login());
-            return ResponseEntity.ok(new DadosTokenJWT(tokenJWT));
+
+            return ResponseEntity.ok(new DadosTokenJWT(tokenJWT, usuarioLogado.getFullName()));
 
         } catch (Exception e) {
             log.error("Falha na autenticação para o usuário: {}. Motivo: {}", dados.login(), e.getMessage());
@@ -60,7 +63,8 @@ public class AutenticacaoController {
 
         String senhaCriptografada = new BCryptPasswordEncoder().encode(dados.senha());
 
-        Usuario novoUsuario = new Usuario(dados.login(), senhaCriptografada);
+        // CORREÇÃO AQUI: Passando os três parâmetros exigidos (nome, email, senha)
+        Usuario novoUsuario = new Usuario(dados.nome(), dados.login(), senhaCriptografada);
 
         this.repository.save(novoUsuario);
 

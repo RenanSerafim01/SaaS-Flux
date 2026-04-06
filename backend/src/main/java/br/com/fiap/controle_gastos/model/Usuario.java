@@ -15,7 +15,7 @@ import java.util.UUID;
 
 @Table(name = "master_user")
 @Entity(name = "Usuario")
-@Getter
+@Getter // <-- O Lombok já vai criar o getFullName() automaticamente graças a isso!
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
@@ -25,6 +25,8 @@ public class Usuario implements UserDetails {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(name = "full_name")
+    private String fullName;
     private String login;
     private String senha;
 
@@ -51,7 +53,9 @@ public class Usuario implements UserDetails {
     @Override
     public boolean isEnabled() { return true; }
 
-    public Usuario(String login, String senha) {
+    // Construtor corrigido para receber e salvar o nome
+    public Usuario(String fullName, String login, String senha) {
+        this.fullName = fullName;
         this.login = login;
         this.senha = senha;
     }

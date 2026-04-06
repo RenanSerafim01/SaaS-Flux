@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 
 export default function Dashboard() {
+    // --- LÓGICA DE PERSONALIZAÇÃO (PASSO 1) ---
+    const nomeCompleto = localStorage.getItem('nomeUsuario') || 'Usuário';
+    const primeiroNome = nomeCompleto.split(' ')[0];
+
     const [despesas, setDespesas] = useState([]);
     const [totalGastos, setTotalGastos] = useState(0);
     const [carregando, setCarregando] = useState(true);
@@ -260,6 +264,14 @@ export default function Dashboard() {
                         <h1 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter truncate">Flux</h1>
                     </div>
                     <p className="text-gray-500 text-[8px] md:text-[9px] font-black tracking-[0.25em] mt-2 uppercase ml-1">Comande seu dinheiro</p>
+                </div>
+
+                {/* --- SEÇÃO DE BOAS-VINDAS (PASSO 2) --- */}
+                <div className="px-1 mb-6">
+                    <p className="text-gray-500 font-bold text-[10px] uppercase tracking-[0.1em] mb-1">Bem-vindo,</p>
+                    <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter truncate">
+                        {primeiroNome}!
+                    </h2>
                 </div>
 
                 <div className="bg-gradient-to-br from-sky-600 to-indigo-900 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-7 mb-8 md:mb-10 shadow-lg shadow-sky-900/20 transform hover:scale-[1.02] transition-transform">
