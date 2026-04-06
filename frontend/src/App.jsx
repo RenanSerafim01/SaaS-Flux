@@ -17,11 +17,26 @@ const FeatureCard = ({ icon, title, description, badge }) => (
 
 function LandingPage() {
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+    const [isLoginMode, setIsLoginMode] = useState(true);
     const [login, setLogin] = useState('');
     const [senha, setSenha] = useState('');
+    const [confirmaSenha, setConfirmaSenha] = useState('');
+    const [mensagem, setMensagem] = useState({ texto: '', tipo: '' });
+
+    const fecharModal = () => {
+        setIsLoginModalOpen(false);
+        setIsLoginMode(true);
+        setLogin('');
+        setSenha('');
+        setConfirmaSenha('');
+        setMensagem({ texto: '', tipo: '' });
+    };
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        setMensagem({ texto: '', tipo: '' });
+
         try {
             const resposta = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
                 method: 'POST',
@@ -34,11 +49,45 @@ function LandingPage() {
                 localStorage.setItem('token', dados.token);
                 window.location.href = '/dashboard';
             } else {
-                alert("Usuário ou senha incorretos.");
+                setMensagem({ texto: 'Usuário ou senha incorretos.', tipo: 'erro' });
             }
         } catch (erro) {
             console.error(erro);
-            alert("Servidor indisponível.");
+            setMensagem({ texto: 'Servidor indisponível no momento.', tipo: 'erro' });
+        }
+    };
+
+    const handleCadastro = async (e) => {
+        e.preventDefault();
+        setMensagem({ texto: '', tipo: '' });
+
+        if (senha !== confirmaSenha) {
+            setMensagem({ texto: 'As senhas não coincidem.', tipo: 'erro' });
+            return;
+        }
+
+        try {
+            const resposta = await fetch(`${import.meta.env.VITE_API_URL}/cadastro`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login, senha })
+            });
+
+            if (resposta.ok) {
+                setMensagem({ texto: 'Conta criada com sucesso! Faça login.', tipo: 'sucesso' });
+                setTimeout(() => {
+                    setIsLoginMode(true);
+                    setSenha('');
+                    setConfirmaSenha('');
+                    setMensagem({ texto: '', tipo: '' });
+                }, 2000);
+            } else {
+                const errorText = await resposta.text();
+                setMensagem({ texto: errorText || 'Erro ao criar conta.', tipo: 'erro' });
+            }
+        } catch (erro) {
+            console.error(erro);
+            setMensagem({ texto: 'Servidor indisponível no momento.', tipo: 'erro' });
         }
     };
 
@@ -77,60 +126,38 @@ function LandingPage() {
                 </nav>
             </header>
 
-            {/* --- SEÇÃO 1: HERO --- */}
+            {/* --- SEÇÕES DA PÁGINA MANTIDAS IGUAIS --- */}
             <section className="pt-32 md:pt-40 pb-10 md:pb-16 px-4 md:px-6 relative z-10 flex flex-col items-center justify-center min-h-[65vh] md:min-h-[auto]">
                 <div className="max-w-4xl mx-auto text-center w-full flex flex-col items-center">
-
                     <span className="inline-block bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[8px] md:text-[10px] px-4 py-1.5 rounded-full font-black tracking-widest uppercase mb-6 md:mb-8">
                         O Motor da sua Vida Financeira
                     </span>
-
                     <h2 className="text-4xl sm:text-5xl md:text-7xl font-black text-white uppercase tracking-tighter leading-[1.1] md:leading-[0.95] mb-6 md:mb-8 w-full px-2">
                         Assuma o comando <br className="hidden md:block" /> do seu <br className="md:hidden" /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-500">fluxo financeiro.</span>
                     </h2>
-
                     <p className="text-sm md:text-lg text-gray-400 max-w-2xl mx-auto mb-10 md:mb-12 font-medium px-4 leading-relaxed">
                         O Flux é o sistema definitivo para você registrar, analisar e dominar para onde cada centavo do seu dinheiro está indo. Interface premium, sem planilhas chatas.
                     </p>
-
-                    <button
-                        onClick={() => setIsLoginModalOpen(true)}
-                        className="px-8 md:px-12 py-4 md:py-5 bg-white text-[#0b0f19] font-black text-xs md:text-sm rounded-full uppercase tracking-wider hover:bg-gray-200 transition shadow-xl transform hover:scale-105"
-                    >
+                    <button onClick={() => setIsLoginModalOpen(true)} className="px-8 md:px-12 py-4 md:py-5 bg-white text-[#0b0f19] font-black text-xs md:text-sm rounded-full uppercase tracking-wider hover:bg-gray-200 transition shadow-xl transform hover:scale-105">
                         Entrar na Versão Beta
                     </button>
                 </div>
             </section>
 
-            {/* --- SEÇÃO 2: COMO FUNCIONA --- */}
             <section className="pt-8 pb-16 md:pt-12 md:pb-24 px-4 md:px-6 max-w-7xl mx-auto">
                 <div className="text-center mb-10 md:mb-16">
                     <h2 className="text-[10px] md:text-sm font-black text-sky-500 uppercase tracking-widest mb-2">Recursos Ativos</h2>
                     <p className="text-2xl md:text-4xl font-extrabold text-white uppercase tracking-tight">O que já construímos</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-                    <FeatureCard
-                        icon="🎛️"
-                        title="Dashboard Premium"
-                        description="Acompanhe seus gastos com uma interface noturna moderna, barras de progresso automáticas e foco total na clareza dos dados."
-                    />
-                    <FeatureCard
-                        icon="↻"
-                        title="Gestão de Recorrências"
-                        description="Separe os gastos avulsos das suas assinaturas e contas fixas. Saiba exatamente o peso das suas despesas mensais."
-                    />
-                    <FeatureCard
-                        icon="📊"
-                        title="Categorias Inteligentes"
-                        description="Organize o dinheiro do seu jeito. Use nossas categorias de sistema ou crie marcadores personalizados para a sua rotina."
-                    />
+                    <FeatureCard icon="🎛️" title="Dashboard Premium" description="Acompanhe seus gastos com uma interface noturna moderna, barras de progresso automáticas e foco total na clareza dos dados." />
+                    <FeatureCard icon="↻" title="Gestão de Recorrências" description="Separe os gastos avulsos das suas assinaturas e contas fixas. Saiba exatamente o peso das suas despesas mensais." />
+                    <FeatureCard icon="📊" title="Categorias Inteligentes" description="Organize o dinheiro do seu jeito. Use nossas categorias de sistema ou crie marcadores personalizados para a sua rotina." />
                 </div>
             </section>
 
-            {/* --- SEÇÃO 3: OBJETIVOS FUTUROS --- */}
             <section className="py-16 md:py-24 px-4 md:px-6 bg-[#131826] border-t border-gray-800/60 relative overflow-hidden">
                 <div className="hidden md:block absolute top-0 right-0 w-[30rem] h-[30rem] bg-indigo-900/10 rounded-full blur-[100px] pointer-events-none"></div>
-
                 <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center relative z-10">
                     <div className="text-center lg:text-left">
                         <h2 className="text-[10px] md:text-sm font-black text-indigo-400 uppercase tracking-widest mb-2">Nosso Roadmap</h2>
@@ -148,28 +175,40 @@ function LandingPage() {
                 </div>
             </section>
 
-            {/* --- RODAPÉ --- */}
             <footer className="py-8 md:py-12 px-6 border-t border-gray-800/60 bg-[#0b0f19] text-center">
                 <span className="text-gray-600 font-extrabold text-[8px] md:text-[10px] tracking-[0.25em] uppercase">
                     Flux Engine © 2026 | Versão Beta 1.0
                 </span>
             </footer>
 
-            {/* --- MODAL DE LOGIN --- */}
+            {/* --- MODAL LOGIN E CADASTRO --- */}
             {isLoginModalOpen && (
-                <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-50 transition-opacity backdrop-blur-sm" onClick={() => setIsLoginModalOpen(false)}>
+                <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-50 transition-opacity backdrop-blur-sm" onClick={fecharModal}>
 
                     <div className="w-full max-w-sm p-6 md:p-10 bg-[#131826] border border-gray-800/60 rounded-[1.5rem] md:rounded-[2rem] shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
 
-                        <div className="text-center mb-6 md:mb-8 flex flex-col items-center mt-2 md:mt-0">
+                        <div className="text-center mb-6 flex flex-col items-center mt-2 md:mt-0">
                             <div className="relative inline-block mb-1">
-                                <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter">Acessar Sistema</h2>
-                                <span className="absolute left-full top-0 ml-1 md:ml-2 mt-0 md:mt-0.5 bg-sky-500/20 text-sky-400 text-[8px] px-2 py-0.5 rounded-sm font-black tracking-widest uppercase">Beta</span>
+                                <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter">
+                                    {isLoginMode ? 'Acessar Sistema' : 'Criar Conta'}
+                                </h2>
+                                {isLoginMode && (
+                                    <span className="absolute left-full top-0 ml-1 md:ml-2 mt-0 md:mt-0.5 bg-sky-500/20 text-sky-400 text-[8px] px-2 py-0.5 rounded-sm font-black tracking-widest uppercase">Beta</span>
+                                )}
                             </div>
-                            <p className="text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-wider mt-2">Identifique-se</p>
+                            <p className="text-[10px] md:text-xs text-gray-500 font-bold uppercase tracking-wider mt-2">
+                                {isLoginMode ? 'Identifique-se' : 'Junte-se ao Flux'}
+                            </p>
                         </div>
 
-                        <form onSubmit={(e) => handleLogin(e)} className="space-y-4 md:space-y-5">
+                        {/* --- EXIBIÇÃO DE MENSAGENS --- */}
+                        {mensagem.texto && (
+                            <div className={`p-3 rounded-xl text-xs font-bold text-center tracking-wide mb-5 border ${mensagem.tipo === 'erro' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
+                                {mensagem.texto}
+                            </div>
+                        )}
+
+                        <form onSubmit={isLoginMode ? handleLogin : handleCadastro} className="space-y-4 md:space-y-5">
                             <div>
                                 <label className="block mb-2 text-[9px] md:text-[10px] font-black text-gray-500 tracking-widest uppercase">Login (E-mail)</label>
                                 <input type="email" value={login} onChange={(e) => setLogin(e.target.value)} className="w-full px-4 md:px-5 py-3 md:py-3.5 bg-[#0b0f19] text-white font-bold text-sm border border-gray-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-gray-700" placeholder="usuario@email.com" required />
@@ -179,14 +218,47 @@ function LandingPage() {
                                 <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} className="w-full px-4 md:px-5 py-3 md:py-3.5 bg-[#0b0f19] text-white font-bold text-sm border border-gray-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-gray-700" placeholder="••••••••••" required />
                             </div>
 
+                            {/* Campo de confirmação aparece apenas no modo de Cadastro */}
+                            {!isLoginMode && (
+                                <div>
+                                    <label className="block mb-2 text-[9px] md:text-[10px] font-black text-gray-500 tracking-widest uppercase">Confirme a Senha</label>
+                                    <input type="password" value={confirmaSenha} onChange={(e) => setConfirmaSenha(e.target.value)} className="w-full px-4 md:px-5 py-3 md:py-3.5 bg-[#0b0f19] text-white font-bold text-sm border border-gray-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all placeholder:text-gray-700" placeholder="••••••••••" required />
+                                </div>
+                            )}
+
+                            {/* Link de Esqueci a Senha apenas no modo de Login */}
+                            {isLoginMode && (
+                                <div className="text-right">
+                                    <button type="button" className="text-[10px] text-gray-500 hover:text-sky-400 transition font-bold tracking-wider uppercase">
+                                        Esqueceu a senha?
+                                    </button>
+                                </div>
+                            )}
+
                             <div className="pt-2">
                                 <button type="submit" className="w-full bg-sky-500 hover:bg-sky-400 text-white font-black py-3 md:py-4 rounded-xl transition-all uppercase tracking-widest text-[10px] md:text-sm shadow-lg shadow-sky-500/20">
-                                    Acessar Conta
+                                    {isLoginMode ? 'Acessar Conta' : 'Cadastrar e Entrar'}
                                 </button>
                             </div>
                         </form>
 
-                        <button onClick={() => setIsLoginModalOpen(false)} className="absolute top-4 md:top-6 right-4 md:right-6 text-gray-600 hover:text-white transition font-bold text-xl md:text-2xl leading-none">&times;</button>
+                        {/* Botão para alternar entre Login e Cadastro */}
+                        <div className="mt-6 text-center border-t border-gray-800/60 pt-6">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsLoginMode(!isLoginMode);
+                                    setMensagem({texto: '', tipo: ''});
+                                    setSenha('');
+                                    setConfirmaSenha('');
+                                }}
+                                className="text-[10px] md:text-xs text-gray-400 hover:text-white transition font-bold tracking-wider uppercase"
+                            >
+                                {isLoginMode ? 'Ainda não tem conta? Cadastre-se' : 'Já tem uma conta? Faça Login'}
+                            </button>
+                        </div>
+
+                        <button onClick={fecharModal} className="absolute top-4 md:top-6 right-4 md:right-6 text-gray-600 hover:text-white transition font-bold text-xl md:text-2xl leading-none">&times;</button>
                     </div>
                 </div>
             )}
