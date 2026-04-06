@@ -451,7 +451,7 @@ export default function Dashboard() {
 
                             {/* --- HISTÓRICO DE RENDAS --- */}
                             <div className={cardClass}>
-                                <h2 className="text-xs md:text-sm font-black text-emerald-400 uppercase tracking-widest mb-4 md:mb-6">Histórico de Entradas</h2>
+                                <h2 className="text-xs md:text-sm font-black text-white uppercase tracking-widest mb-4 md:mb-6">Histórico de Entradas</h2>
                                 <div className="space-y-1">
                                     {rendas.length === 0 ? (
                                         <p className="text-gray-500 text-xs py-2">Nenhuma renda registrada.</p>
