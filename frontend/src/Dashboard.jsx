@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 
 export default function Dashboard() {
-    // --- LÓGICA DE PERSONALIZAÇÃO (PASSO 1) ---
     const nomeCompleto = localStorage.getItem('nomeUsuario') || 'Usuário';
     const primeiroNome = nomeCompleto.split(' ')[0];
 
@@ -10,6 +9,12 @@ export default function Dashboard() {
     const [carregando, setCarregando] = useState(true);
     const [categorias, setCategorias] = useState([]);
     const [gastosFixos, setGastosFixos] = useState([]);
+
+    // --- NOVOS ESTADOS PARA RENDA ---
+    const [totalRendas, setTotalRendas] = useState(0);
+    const [isModalRendaOpen, setIsModalRendaOpen] = useState(false);
+    const [enviandoRenda, setEnviandoRenda] = useState(false);
+    const [novaRenda, setNovaRenda] = useState({ descricao: '', valorReais: '', dataRecebimento: new Date().toISOString().split('T')[0] });
 
     const [menuMobileAberto, setMenuMobileAberto] = useState(false);
 
@@ -32,6 +37,7 @@ export default function Dashboard() {
             const token = localStorage.getItem('token');
             const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
+            // Busca Despesas
             const respostaDespesas = await fetch(`${import.meta.env.VITE_API_URL}/despesas?size=1000`, { method: 'GET', headers });
             if (respostaDespesas.ok) {
                 const pagina = await respostaDespesas.json();
@@ -41,6 +47,7 @@ export default function Dashboard() {
                 localStorage.removeItem('token'); window.location.href = '/';
             }
 
+            // Busca Categorias
             const respostaCategorias = await fetch(`${import.meta.env.VITE_API_URL}/categorias?size=1000`, { method: 'GET', headers });
             if (respostaCategorias.ok) {
                 const dadosCat = await respostaCategorias.json();
@@ -52,13 +59,22 @@ export default function Dashboard() {
                 }
             }
 
+            // Busca Fixos
             try {
                 const respostaFixos = await fetch(`${import.meta.env.VITE_API_URL}/gastos-fixos?size=1000`, { method: 'GET', headers });
                 if (respostaFixos.ok) setGastosFixos((await respostaFixos.json()).content || []);
-            } catch (e) {
-                console.error("Erro ao buscar gastos fixos:", e);
-                setGastosFixos([]);
-            }
+            } catch (e) { console.error("Erro ao buscar gastos fixos:", e); setGastosFixos([]); }
+
+            // --- BUSCA RENDAS ---
+            try {
+                const respostaRendas = await fetch(`${import.meta.env.VITE_API_URL}/rendas?size=1000`, { method: 'GET', headers });
+                if (respostaRendas.ok) {
+                    const dadosRenda = await respostaRendas.json();
+                    const rendasList = dadosRenda.content || [];
+                    setTotalRendas(rendasList.reduce((acc, r) => acc + ((r.valorCentavos || 0) / 100), 0));
+                }
+            } catch (e) { console.error("Erro ao buscar rendas:", e); setTotalRendas(0); }
+
         } catch (erro) {
             console.error("Erro geral ao buscar dados:", erro);
         } finally {
@@ -67,6 +83,35 @@ export default function Dashboard() {
     };
 
     useEffect(() => { buscarDados(); }, []);
+
+    // --- NOVA FUNÇÃO DE CADASTRAR RENDA ---
+    const handleCadastrarRenda = async (e) => {
+        e.preventDefault();
+        setEnviandoRenda(true);
+        try {
+            const token = localStorage.getItem('token');
+            const valorCentavos = Math.round(parseFloat(novaRenda.valorReais.replace(/\./g, '').replace(',', '.')) * 100);
+            const dataFormatada = new Date(`${novaRenda.dataRecebimento}T00:00:00Z`).toISOString();
+
+            const resposta = await fetch(`${import.meta.env.VITE_API_URL}/rendas`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ descricao: novaRenda.descricao, valorCentavos, dataRecebimento: dataFormatada })
+            });
+
+            if (resposta.ok) {
+                setNovaRenda({ descricao: '', valorReais: '', dataRecebimento: new Date().toISOString().split('T')[0] });
+                setIsModalRendaOpen(false);
+                buscarDados();
+            } else {
+                alert("Ocorreu um erro ao registrar a renda.");
+            }
+        } catch (erro) {
+            console.error("Erro no cadastro de renda:", erro);
+        } finally {
+            setEnviandoRenda(false);
+        }
+    };
 
     const handleCadastrarDespesa = async (e) => {
         e.preventDefault();
@@ -81,7 +126,6 @@ export default function Dashboard() {
                 body: JSON.stringify({ descricao: novaDespesa.descricao, valorCentavos, dataDespesa: dataFormatada, idCategoria: parseInt(novaDespesa.idCategoria), metodoPagamento: novaDespesa.metodoPagamento })
             });
             if (resposta.ok) {
-                alert("Despesa registrada com sucesso.");
                 const primeiraCatId = categorias.length > 0 ? categorias[0].id.toString() : '';
                 setNovaDespesa({ descricao: '', valorReais: '', dataDespesa: new Date().toISOString().split('T')[0], idCategoria: primeiraCatId, metodoPagamento: 'PIX' });
                 setIsModalOpen(false);
@@ -90,7 +134,6 @@ export default function Dashboard() {
             }
         } catch (erro) {
             console.error("Erro no cadastro de despesa:", erro);
-            alert("Ocorreu um erro ao processar a solicitação.");
         } finally {
             setEnviandoForm(false);
         }
@@ -108,7 +151,6 @@ export default function Dashboard() {
                 body: JSON.stringify({ descricao: novoGastoFixo.descricao, valorCentavos, diaVencimento: parseInt(novoGastoFixo.diaVencimento), idCategoria: parseInt(novoGastoFixo.idCategoria), metodoPagamento: novoGastoFixo.metodoPagamento })
             });
             if (resposta.ok) {
-                alert("Gasto recorrente registrado com sucesso.");
                 const primeiraCatId = categorias.length > 0 ? categorias[0].id.toString() : '';
                 setNovoGastoFixo({ descricao: '', valorReais: '', diaVencimento: '10', idCategoria: primeiraCatId, metodoPagamento: 'DEBITO' });
                 setIsModalFixoOpen(false);
@@ -117,7 +159,6 @@ export default function Dashboard() {
             }
         } catch (erro) {
             console.error("Erro no cadastro de fixo:", erro);
-            alert("Ocorreu um erro ao processar a solicitação.");
         } finally {
             setEnviandoFixo(false);
         }
@@ -134,15 +175,11 @@ export default function Dashboard() {
             });
             if (resposta.ok) {
                 const nova = await resposta.json();
-                alert("Categoria criada com sucesso.");
                 buscarDados();
                 setNovaDespesa(p => ({ ...p, idCategoria: nova.id.toString() }));
                 setNovoGastoFixo(p => ({ ...p, idCategoria: nova.id.toString() }));
             }
-        } catch (erro) {
-            console.error("Erro ao criar categoria:", erro);
-            alert("Ocorreu um erro ao processar a solicitação.");
-        }
+        } catch (erro) { console.error("Erro ao criar categoria:", erro); }
     };
 
     const handleExcluirDespesa = async (id, descricao) => {
@@ -150,10 +187,7 @@ export default function Dashboard() {
         try {
             const resposta = await fetch(`${import.meta.env.VITE_API_URL}/despesas/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
             if (resposta.ok) buscarDados();
-        } catch (erro) {
-            console.error("Erro ao excluir despesa:", erro);
-            alert("Erro ao excluir.");
-        }
+        } catch (erro) { console.error("Erro ao excluir despesa:", erro); }
     };
 
     const handleExcluirGastoFixo = async (id, descricao) => {
@@ -161,40 +195,33 @@ export default function Dashboard() {
         try {
             const resposta = await fetch(`${import.meta.env.VITE_API_URL}/gastos-fixos/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
             if (resposta.ok) buscarDados();
-        } catch (erro) {
-            console.error("Erro ao excluir fixo:", erro);
-            alert("Erro ao excluir.");
-        }
+        } catch (erro) { console.error("Erro ao excluir fixo:", erro); }
     };
 
     const handleExcluirCategoria = async (id, nome) => {
         if (!window.confirm(`Tem certeza que deseja apagar a categoria "${nome}"?`)) return;
         try {
             const resposta = await fetch(`${import.meta.env.VITE_API_URL}/categorias/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
-            if (resposta.ok) {
-                setCategorias(categorias.filter(c => c.id !== id));
-            } else {
-                alert("Não é possível excluir categorias globais ou que já possuem transações vinculadas.");
-            }
-        } catch (erro) {
-            console.error("Erro ao excluir categoria:", erro);
-            alert("Erro de rede.");
-        }
+            if (resposta.ok) { setCategorias(categorias.filter(c => c.id !== id)); }
+            else { alert("Não é possível excluir categorias globais ou em uso."); }
+        } catch (erro) { console.error("Erro ao excluir categoria:", erro); }
     };
 
     const formatarMoeda = (valor) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
     const formatarData = (dataIso) => { if (!dataIso) return '--/--/----'; return new Date(dataIso).toLocaleDateString('pt-BR', {timeZone: 'UTC'}); };
 
+    // --- MATEMÁTICA INTELIGENTE DO SISTEMA ---
     const totalFixos = gastosFixos.reduce((acc, f) => acc + ((f.valorCentavos || 0) / 100), 0);
-    const valorConsolidado = totalGastos + totalFixos;
+    const totalSaidas = totalGastos + totalFixos;
+    const saldoConsolidado = totalRendas - totalSaidas;
+
+    // Cor dinâmica do Saldo
+    const corSaldoCard = saldoConsolidado >= 0 ? "from-emerald-600 to-teal-900 shadow-emerald-900/20" : "from-rose-600 to-red-900 shadow-rose-900/20";
+
     const totalTransacoes = despesas.length + gastosFixos.length;
 
-    const idsCategoriasUsadas = new Set([
-        ...despesas.map(d => d.categoria?.id || d.categoria),
-        ...gastosFixos.map(f => f.categoria?.id || f.categoria)
-    ]);
-    idsCategoriasUsadas.delete(undefined);
-    idsCategoriasUsadas.delete(null);
+    const idsCategoriasUsadas = new Set([...despesas.map(d => d.categoria?.id || d.categoria), ...gastosFixos.map(f => f.categoria?.id || f.categoria)]);
+    idsCategoriasUsadas.delete(undefined); idsCategoriasUsadas.delete(null);
     const qtdCategoriasEmUso = idsCategoriasUsadas.size;
 
     const resumoCategorias = categorias.map(cat => {
@@ -204,10 +231,8 @@ export default function Dashboard() {
     }).filter(c => c.total > 0).sort((a, b) => b.total - a.total).slice(0, 5);
 
     const totalDespesasParaPorcentagem = resumoCategorias.reduce((acc, c) => acc + c.total, 0) || 1;
-
     const despesasOrdenadas = [...despesas].sort((a, b) => new Date(b.dataDespesa) - new Date(a.dataDespesa));
     const fixosOrdenados = [...gastosFixos].reverse();
-
     const despesasAtuais = despesasOrdenadas.slice((paginaDespesas - 1) * itensPorPagina, paginaDespesas * itensPorPagina);
     const fixosAtuais = fixosOrdenados.slice((paginaFixos - 1) * itensPorPagina, paginaFixos * itensPorPagina);
 
@@ -227,18 +252,11 @@ export default function Dashboard() {
             `}</style>
 
             {menuMobileAberto && (
-                <div
-                    className="fixed inset-0 bg-black/80 z-40 md:hidden backdrop-blur-sm transition-opacity"
-                    onClick={() => setMenuMobileAberto(false)}
-                />
+                <div className="fixed inset-0 bg-black/80 z-40 md:hidden backdrop-blur-sm transition-opacity" onClick={() => setMenuMobileAberto(false)} />
             )}
 
             <aside className={`fixed inset-y-0 left-0 z-50 w-[280px] md:w-[340px] bg-[#131826] border-r border-gray-800/50 flex flex-col p-6 md:p-8 shadow-2xl shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${menuMobileAberto ? 'translate-x-0' : '-translate-x-full'}`}>
-
-                <button
-                    onClick={() => setMenuMobileAberto(false)}
-                    className="md:hidden absolute top-6 right-6 text-gray-500 hover:text-white"
-                >
+                <button onClick={() => setMenuMobileAberto(false)} className="md:hidden absolute top-6 right-6 text-gray-500 hover:text-white">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
 
@@ -248,16 +266,11 @@ export default function Dashboard() {
                             <svg className="w-7 h-7 md:w-9 md:h-9" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <defs>
                                     <linearGradient id="fluxGradSidebar" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stopColor="#0ea5e9" />
-                                        <stop offset="100%" stopColor="#6366f1" />
-                                    </linearGradient>
-                                    <linearGradient id="coinGradSidebar" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.15" />
-                                        <stop offset="100%" stopColor="#6366f1" stopOpacity="0.15" />
+                                        <stop offset="0%" stopColor="#0ea5e9" /><stop offset="100%" stopColor="#6366f1" />
                                     </linearGradient>
                                 </defs>
                                 <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" stroke="url(#fluxGradSidebar)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                <circle cx="12" cy="12" r="4.5" fill="url(#coinGradSidebar)" stroke="url(#fluxGradSidebar)" strokeWidth="1.0" />
+                                <circle cx="12" cy="12" r="4.5" fill="none" stroke="url(#fluxGradSidebar)" strokeWidth="1.0" />
                                 <path d="M12 9v6M13.5 10.5c0-.8-.6-1.5-1.5-1.5s-1.5.7-1.5 1.5c0 1.7 3 1.3 3 3 0 .8-.6 1.5-1.5 1.5s-1.5-.7-1.5-1.5" stroke="url(#fluxGradSidebar)" strokeWidth="1.0" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                         </div>
@@ -266,17 +279,15 @@ export default function Dashboard() {
                     <p className="text-gray-500 text-[8px] md:text-[9px] font-black tracking-[0.25em] mt-2 uppercase ml-1">Comande seu dinheiro</p>
                 </div>
 
-                {/* --- SEÇÃO DE BOAS-VINDAS (PASSO 2) --- */}
                 <div className="px-1 mb-6">
                     <p className="text-gray-500 font-bold text-[10px] uppercase tracking-[0.1em] mb-1">Bem-vindo,</p>
-                    <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter truncate">
-                        {primeiroNome}!
-                    </h2>
+                    <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter truncate">{primeiroNome}!</h2>
                 </div>
 
-                <div className="bg-gradient-to-br from-sky-600 to-indigo-900 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-7 mb-8 md:mb-10 shadow-lg shadow-sky-900/20 transform hover:scale-[1.02] transition-transform">
-                    <p className="text-sky-100 font-medium text-[10px] md:text-xs tracking-wider uppercase mb-1">Total Consolidado</p>
-                    <p className="text-2xl md:text-3xl font-black text-white truncate">{carregando ? '...' : formatarMoeda(valorConsolidado)}</p>
+                {/* --- CARD DINÂMICO DE SALDO --- */}
+                <div className={`bg-gradient-to-br ${corSaldoCard} rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-7 mb-8 md:mb-10 shadow-lg transform hover:scale-[1.02] transition-all duration-500`}>
+                    <p className="text-white/80 font-medium text-[10px] md:text-xs tracking-wider uppercase mb-1">Saldo Atual</p>
+                    <p className="text-2xl md:text-3xl font-black text-white truncate">{carregando ? '...' : formatarMoeda(saldoConsolidado)}</p>
                     <div className="mt-4 md:mt-5 pt-3 md:pt-4 border-t border-white/20 flex gap-2">
                         <span className="bg-white/20 text-white text-[9px] md:text-[10px] px-2 md:px-3 py-1 md:py-1.5 rounded-md font-bold uppercase tracking-wider">{totalTransacoes} Transações</span>
                     </div>
@@ -285,8 +296,12 @@ export default function Dashboard() {
                 <nav className="flex flex-col gap-2 md:gap-3 flex-grow overflow-y-auto custom-scrollbar pr-2">
                     <p className="text-gray-600 text-[9px] md:text-[10px] font-black tracking-[0.2em] uppercase mb-1 ml-2">Ações Rápidas</p>
 
+                    {/* --- BOTÃO REGISTRAR RENDA AGORA ESTÁ ATIVO --- */}
+                    <button onClick={() => { setIsModalRendaOpen(true); setMenuMobileAberto(false); }} className={sidebarButton}>
+                        <div className="flex items-center gap-3"><span className="text-emerald-400">💰</span> Registrar Renda</div>
+                    </button>
                     <button onClick={() => { setIsModalOpen(true); setMenuMobileAberto(false); }} className={sidebarButton}>
-                        <div className="flex items-center gap-3"><span>+</span> Registrar Despesa</div>
+                        <div className="flex items-center gap-3"><span className="text-rose-400">-</span> Registrar Despesa</div>
                     </button>
                     <button onClick={() => { setIsModalFixoOpen(true); setMenuMobileAberto(false); }} className={sidebarButton}>
                         <div className="flex items-center gap-3"><span>↻</span> Gasto Recorrente</div>
@@ -296,25 +311,11 @@ export default function Dashboard() {
                     </button>
 
                     <p className="text-gray-600 text-[9px] md:text-[10px] font-black tracking-[0.2em] uppercase mt-4 md:mt-6 mb-1 ml-2">Em Desenvolvimento</p>
-
                     <div className={`${sidebarButton} opacity-50 cursor-not-allowed flex`} title="Funcionalidade em desenvolvimento">
-                        <div className="flex items-center gap-3"><span>🏦</span> Conexão Bancária</div>
-                        <span className="bg-emerald-500/20 text-emerald-400 text-[8px] px-2 py-0.5 rounded-sm uppercase tracking-widest hidden md:block">Em breve</span>
+                        <div className="flex items-center gap-3"><span>🏦</span> Conexão Bancária</div><span className="bg-sky-500/20 text-sky-400 text-[8px] px-2 py-0.5 rounded-sm uppercase tracking-widest hidden md:block">Em breve</span>
                     </div>
-
-                    <div className={`${sidebarButton} opacity-50 cursor-not-allowed`} title="Funcionalidade em desenvolvimento">
-                        <div className="flex items-center gap-3"><span>💰</span> Registrar Renda</div>
-                        <span className="bg-sky-500/20 text-sky-400 text-[8px] px-2 py-0.5 rounded-sm uppercase tracking-widest hidden md:block">Em breve</span>
-                    </div>
-
                     <div className={`${sidebarButton} opacity-50 cursor-not-allowed flex`} title="Funcionalidade em desenvolvimento">
-                        <div className="flex items-center gap-3"><span>🎯</span> Metas e Reservas</div>
-                        <span className="bg-fuchsia-500/20 text-fuchsia-400 text-[8px] px-2 py-0.5 rounded-sm uppercase tracking-widest hidden md:block">Em breve</span>
-                    </div>
-
-                    <div className={`${sidebarButton} opacity-50 cursor-not-allowed flex`} title="Funcionalidade em desenvolvimento">
-                        <div className="flex items-center gap-3"><span>🗑️</span> Lixeira e Restauração</div>
-                        <span className="bg-rose-500/20 text-rose-400 text-[8px] px-2 py-0.5 rounded-sm uppercase tracking-widest hidden md:block">Em breve</span>
+                        <div className="flex items-center gap-3"><span>🎯</span> Metas e Reservas</div><span className="bg-fuchsia-500/20 text-fuchsia-400 text-[8px] px-2 py-0.5 rounded-sm uppercase tracking-widest hidden md:block">Em breve</span>
                     </div>
                 </nav>
 
@@ -324,50 +325,32 @@ export default function Dashboard() {
             </aside>
 
             <main className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-10 relative w-full">
-
                 <div className="hidden md:block absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-sky-900/10 rounded-full blur-[120px] pointer-events-none"></div>
 
                 <div className="max-w-6xl mx-auto relative z-10">
-
                     <div className="md:hidden flex items-center justify-between mb-6 bg-[#131826] p-4 rounded-2xl border border-gray-800/60 shadow-lg gap-4">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
-
-                            <div className="relative flex items-center justify-center w-10 h-10 bg-gradient-to-br from-[#0b0f19] to-[#1a2133] rounded-xl border border-gray-800 shadow-lg shrink-0 overflow-hidden">
-                                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <defs>
-                                        <linearGradient id="fluxGradMobile" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" stopColor="#0ea5e9" />
-                                            <stop offset="100%" stopColor="#6366f1" />
-                                        </linearGradient>
-                                        <linearGradient id="coinGradMobile" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.15" />
-                                            <stop offset="100%" stopColor="#6366f1" stopOpacity="0.15" />
-                                        </linearGradient>
-                                    </defs>
-                                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" stroke="url(#fluxGradMobile)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <circle cx="12" cy="12" r="4.5" fill="url(#coinGradMobile)" stroke="url(#fluxGradMobile)" strokeWidth="1.0" />
-                                    <path d="M12 9v6M13.5 10.5c0-.8-.6-1.5-1.5-1.5s-1.5.7-1.5 1.5c0 1.7 3 1.3 3 3 0 .8-.6 1.5-1.5 1.5s-1.5-.7-1.5-1.5" stroke="url(#fluxGradMobile)" strokeWidth="1.0" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                            </div>
-
                             <span className="text-2xl font-black text-white uppercase tracking-tighter truncate flex-1">Flux</span>
                         </div>
-
-                        <button
-                            onClick={() => setMenuMobileAberto(true)}
-                            className="p-3 bg-[#1a2133] hover:bg-sky-500 rounded-lg text-white transition-colors shrink-0"
-                        >
+                        <button onClick={() => setMenuMobileAberto(true)} className="p-3 bg-[#1a2133] hover:bg-sky-500 rounded-lg text-white transition-colors shrink-0">
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                         </button>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+                        {/* --- CARDS DE RESUMO ATUALIZADOS --- */}
+                        <div className={`${cardClass} flex items-center justify-between`}>
+                            <div className="flex flex-col items-start min-w-0 flex-1 pr-3">
+                                <p className="text-gray-500 font-bold text-[9px] md:text-[10px] uppercase tracking-widest mb-1">Renda Total (Entradas)</p>
+                                <p className="text-xl md:text-2xl font-black text-emerald-400 mb-2 truncate w-full">{carregando ? '...' : formatarMoeda(totalRendas)}</p>
+                            </div>
+                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 text-lg md:text-xl shrink-0">💰</div>
+                        </div>
 
                         <div className={`${cardClass} flex items-center justify-between`}>
                             <div className="flex flex-col items-start min-w-0 flex-1 pr-3">
                                 <p className="text-gray-500 font-bold text-[9px] md:text-[10px] uppercase tracking-widest mb-1">Despesas Avulsas</p>
                                 <p className="text-xl md:text-2xl font-black text-white mb-2 truncate w-full">{carregando ? '...' : formatarMoeda(totalGastos)}</p>
-                                <span className="bg-[#1a2133] text-sky-400 text-[8px] px-2 py-1 rounded-md font-bold uppercase tracking-widest border border-sky-500/10 shrink-0">{despesas.length} Avulsas</span>
                             </div>
                             <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-sky-500/10 flex items-center justify-center text-sky-500 text-lg md:text-xl shrink-0">💳</div>
                         </div>
@@ -376,26 +359,13 @@ export default function Dashboard() {
                             <div className="flex flex-col items-start min-w-0 flex-1 pr-3">
                                 <p className="text-gray-500 font-bold text-[9px] md:text-[10px] uppercase tracking-widest mb-1">Gastos Fixos Mensais</p>
                                 <p className="text-xl md:text-2xl font-black text-white mb-2 truncate w-full">{formatarMoeda(totalFixos)}</p>
-                                <span className="bg-[#1a2133] text-indigo-400 text-[8px] px-2 py-1 rounded-md font-bold uppercase tracking-widest border border-indigo-500/10 shrink-0">{gastosFixos.length} Fixos</span>
                             </div>
                             <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 text-lg md:text-xl shrink-0">↻</div>
                         </div>
-
-                        <div className={`${cardClass} flex items-center justify-between`}>
-                            <div className="flex flex-col items-start min-w-0 flex-1 pr-3">
-                                <p className="text-gray-500 font-bold text-[9px] md:text-[10px] uppercase tracking-widest mb-1">Categorias Ativas</p>
-                                <p className="text-xl md:text-2xl font-black text-white mb-2 truncate w-full">{qtdCategoriasEmUso}</p>
-                                <span className="bg-[#1a2133] text-fuchsia-400 text-[8px] px-2 py-1 rounded-md font-bold uppercase tracking-widest border border-fuchsia-500/10 shrink-0">Em Uso</span>
-                            </div>
-                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-fuchsia-500/10 flex items-center justify-center text-fuchsia-500 text-lg md:text-xl shrink-0">📊</div>
-                        </div>
-
                     </div>
 
                     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
-
                         <div className="xl:col-span-2 space-y-6 md:space-y-8">
-
                             <div className={cardClass}>
                                 <div className="flex justify-between items-center mb-4 md:mb-6">
                                     <h2 className="text-xs md:text-sm font-black text-white uppercase tracking-widest">Extrato Avulso Recente</h2>
@@ -413,7 +383,6 @@ export default function Dashboard() {
                                             <div className="flex items-center gap-2 md:gap-6 shrink-0">
                                                 <div className="text-right flex flex-col items-end">
                                                     <p className="font-bold text-white text-sm md:text-base">- {formatarMoeda((despesa.valorCentavos || 0) / 100)}</p>
-                                                    <p className="text-[9px] md:text-[10px] font-black text-gray-600 uppercase tracking-widest mt-0.5">{despesa.metodoPagamento}</p>
                                                 </div>
                                                 <button onClick={() => handleExcluirDespesa(despesa.id, despesa.descricao || 'Sem nome')} className="text-gray-600 hover:text-red-500 md:opacity-0 group-hover:opacity-100 transition-all p-2" title="Apagar Despesa">🗑</button>
                                             </div>
@@ -434,19 +403,14 @@ export default function Dashboard() {
                                         <div key={index} className="group flex justify-between items-center py-3 md:py-4 border-b border-gray-800/50 hover:bg-[#1a2133] rounded-xl px-2 md:px-4 transition-colors gap-3">
                                             <div className="flex flex-col flex-1 min-w-0">
                                                 <p className="font-extrabold text-xs md:text-sm text-gray-200 truncate">{fixo.descricao || fixo.nome}</p>
-
                                                 <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                                    <span className="text-[9px] md:text-[10px] font-bold text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded uppercase truncate max-w-[120px]">
-                                                        {fixo.categoria?.nome || fixo.categoria?.category_name || 'Geral'}
-                                                    </span>
+                                                    <span className="text-[9px] md:text-[10px] font-bold text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded uppercase truncate max-w-[120px]">{fixo.categoria?.nome || fixo.categoria?.category_name || 'Geral'}</span>
                                                     <span className="text-[10px] md:text-[11px] font-medium text-gray-500 shrink-0">Dia {fixo.diaVencimento || fixo.data}</span>
                                                 </div>
-
                                             </div>
                                             <div className="flex items-center gap-2 md:gap-6 shrink-0">
                                                 <div className="text-right flex flex-col items-end">
                                                     <p className="font-bold text-white text-sm md:text-base">- {formatarMoeda((fixo.valorCentavos / 100) || fixo.valor || 0)}</p>
-                                                    <p className="text-[9px] md:text-[10px] font-black text-gray-600 uppercase tracking-widest mt-0.5">{fixo.metodoPagamento || fixo.tipo}</p>
                                                 </div>
                                                 <button onClick={() => handleExcluirGastoFixo(fixo.id, fixo.descricao || fixo.nome)} className="text-gray-600 hover:text-red-500 md:opacity-0 group-hover:opacity-100 transition-all p-2" title="Apagar Gasto Fixo">🗑</button>
                                             </div>
@@ -459,7 +423,6 @@ export default function Dashboard() {
                                     <button disabled={gastosFixos.length <= paginaFixos * itensPorPagina} onClick={() => setPaginaFixos(p => p + 1)} className="hover:text-sky-400 disabled:opacity-50 px-3 py-1.5">Próxima</button>
                                 </div>
                             </div>
-
                         </div>
 
                         <div className="space-y-6 md:space-y-8">
@@ -493,47 +456,53 @@ export default function Dashboard() {
                                 )}
                             </div>
                         </div>
-
                     </div>
                 </div>
             </main>
 
+            {/* --- NOVO MODAL DE RENDA --- */}
+            {isModalRendaOpen && (
+                <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-3 sm:p-4 z-[60] transition-opacity backdrop-blur-sm" onClick={() => setIsModalRendaOpen(false)}>
+                    <div className={`${cardClass} w-full max-w-xl border-emerald-500/30 shadow-emerald-900/20`} onClick={(e) => e.stopPropagation()}>
+                        <div className="text-center mb-6 md:mb-8">
+                            <h2 className="text-xl md:text-2xl font-black text-emerald-400 uppercase tracking-wider">Registrar Renda</h2>
+                        </div>
+                        <form onSubmit={handleCadastrarRenda} className="space-y-4 md:space-y-5">
+                            <div>
+                                <label className={labelClass}>Origem da Renda</label>
+                                <input type="text" value={novaRenda.descricao} onChange={(e) => setNovaRenda({...novaRenda, descricao: e.target.value})} className={inputClass} placeholder="Ex: Salário Altio, Freelance..." required />
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div><label className={labelClass}>Valor (R$)</label><input type="text" value={novaRenda.valorReais} onChange={(e) => setNovaRenda({...novaRenda, valorReais: e.target.value})} className={inputClass} placeholder="5000,00" required /></div>
+                                <div><label className={labelClass}>Data de Recebimento</label><input type="date" value={novaRenda.dataRecebimento} onChange={(e) => setNovaRenda({...novaRenda, dataRecebimento: e.target.value})} className={inputClass} required /></div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 md:gap-4 mt-6 md:mt-8 pt-4 border-t border-gray-800/50">
+                                <button type="button" onClick={() => setIsModalRendaOpen(false)} className="w-full px-4 py-3 font-bold text-gray-400 bg-transparent border border-gray-800 rounded-full hover:bg-gray-800 uppercase text-[10px]">Cancelar</button>
+                                <button type="submit" disabled={enviandoRenda} className="w-full px-4 py-3 font-black text-white bg-emerald-600 rounded-full hover:bg-emerald-500 uppercase text-[10px]">{enviandoRenda ? '...' : 'Salvar Entrada'}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* --- MODAIS ANTIGOS MANTIDOS --- */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-3 sm:p-4 z-[60] transition-opacity backdrop-blur-sm" onClick={() => setIsModalOpen(false)}>
                     <div className={`${cardClass} w-full max-w-xl max-h-[90vh] overflow-y-auto custom-scrollbar`} onClick={(e) => e.stopPropagation()}>
-                        <div className="text-center mb-6 md:mb-8">
-                            <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-wider">Registrar Gasto</h2>
-                        </div>
+                        <div className="text-center mb-6 md:mb-8"><h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-wider">Registrar Gasto</h2></div>
                         <form onSubmit={handleCadastrarDespesa} className="space-y-4 md:space-y-5">
-                            <div>
-                                <label className={labelClass}>Descrição</label>
-                                <input type="text" value={novaDespesa.descricao} onChange={(e) => setNovaDespesa({...novaDespesa, descricao: e.target.value})} className={inputClass} placeholder="Ex: Mercado Semanal" required />
-                            </div>
+                            <div><label className={labelClass}>Descrição</label><input type="text" value={novaDespesa.descricao} onChange={(e) => setNovaDespesa({...novaDespesa, descricao: e.target.value})} className={inputClass} placeholder="Ex: Mercado Semanal" required /></div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div><label className={labelClass}>Valor (R$)</label><input type="text" value={novaDespesa.valorReais} onChange={(e) => setNovaDespesa({...novaDespesa, valorReais: e.target.value})} className={inputClass} placeholder="150,00" required /></div>
                                 <div><label className={labelClass}>Data</label><input type="date" value={novaDespesa.dataDespesa} onChange={(e) => setNovaDespesa({...novaDespesa, dataDespesa: e.target.value})} className={inputClass} required /></div>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className={labelClass}>Categoria</label>
-                                    <div className="flex gap-2">
-                                        <select value={novaDespesa.idCategoria} onChange={(e) => setNovaDespesa({...novaDespesa, idCategoria: e.target.value})} className={`${inputClass} appearance-none flex-grow custom-scrollbar`}>
-                                            <optgroup label="SISTEMA" className="text-sky-400">{categorias.filter(c => c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}</optgroup>
-                                            <optgroup label="PESSOAL" className="text-fuchsia-400">{categorias.filter(c => !c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}</optgroup>
-                                        </select>
-                                        <button type="button" onClick={handleCriarCategoria} className="bg-[#1a2133] border border-gray-800 text-white font-bold rounded-xl px-4 hover:bg-sky-500 transition-colors shrink-0">+</button>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className={labelClass}>Pagamento</label>
-                                    <select value={novaDespesa.metodoPagamento} onChange={(e) => setNovaDespesa({...novaDespesa, metodoPagamento: e.target.value})} className={`${inputClass} appearance-none`}>
-                                        <option value="PIX">PIX</option><option value="DEBITO">DÉBITO</option><option value="CREDITO">CRÉDITO</option><option value="DINHEIRO">DINHEIRO</option>
-                                    </select>
-                                </div>
+                                <div><label className={labelClass}>Categoria</label><div className="flex gap-2"><select value={novaDespesa.idCategoria} onChange={(e) => setNovaDespesa({...novaDespesa, idCategoria: e.target.value})} className={`${inputClass} appearance-none flex-grow custom-scrollbar`}><optgroup label="SISTEMA" className="text-sky-400">{categorias.filter(c => c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}</optgroup><optgroup label="PESSOAL" className="text-fuchsia-400">{categorias.filter(c => !c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}</optgroup></select><button type="button" onClick={handleCriarCategoria} className="bg-[#1a2133] border border-gray-800 text-white font-bold rounded-xl px-4 hover:bg-sky-500 shrink-0">+</button></div></div>
+                                <div><label className={labelClass}>Pagamento</label><select value={novaDespesa.metodoPagamento} onChange={(e) => setNovaDespesa({...novaDespesa, metodoPagamento: e.target.value})} className={`${inputClass} appearance-none`}><option value="PIX">PIX</option><option value="DEBITO">DÉBITO</option><option value="CREDITO">CRÉDITO</option><option value="DINHEIRO">DINHEIRO</option></select></div>
                             </div>
-                            <div className="grid grid-cols-2 gap-3 md:gap-4 mt-6 md:mt-8 pt-4 border-t border-gray-800/50">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="w-full px-4 sm:px-5 py-3 md:py-4 font-bold text-gray-400 bg-transparent border border-gray-800 rounded-full hover:bg-gray-800 transition uppercase text-[10px] md:text-xs">Cancelar</button>
-                                <button type="submit" disabled={enviandoForm} className="w-full px-4 sm:px-5 py-3 md:py-4 font-black text-white bg-sky-500 rounded-full hover:bg-sky-400 transition uppercase text-[10px] md:text-xs">{enviandoForm ? '...' : 'Salvar'}</button>
+                            <div className="grid grid-cols-2 gap-3 mt-6 pt-4 border-t border-gray-800/50">
+                                <button type="button" onClick={() => setIsModalOpen(false)} className="w-full py-3 font-bold text-gray-400 border border-gray-800 rounded-full hover:bg-gray-800 text-[10px] uppercase">Cancelar</button>
+                                <button type="submit" disabled={enviandoForm} className="w-full py-3 font-black text-white bg-sky-500 rounded-full hover:bg-sky-400 text-[10px] uppercase">{enviandoForm ? '...' : 'Salvar'}</button>
                             </div>
                         </form>
                     </div>
@@ -543,77 +512,46 @@ export default function Dashboard() {
             {isModalFixoOpen && (
                 <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-3 sm:p-4 z-[60] transition-opacity backdrop-blur-sm" onClick={() => setIsModalFixoOpen(false)}>
                     <div className={`${cardClass} w-full max-w-xl max-h-[90vh] overflow-y-auto custom-scrollbar`} onClick={(e) => e.stopPropagation()}>
-                        <div className="text-center mb-6 md:mb-8"><h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-wider">Gasto Fixo</h2></div>
-                        <form onSubmit={handleCadastrarGastoFixo} className="space-y-4 md:space-y-5">
-                            <div><label className={labelClass}>Descrição</label><input type="text" value={novoGastoFixo.descricao} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, descricao: e.target.value})} className={inputClass} placeholder="Assinatura" required /></div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div><label className={labelClass}>Valor Mensal</label><input type="text" value={novoGastoFixo.valorReais} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, valorReais: e.target.value})} className={inputClass} placeholder="59,90" required /></div>
-                                <div><label className={labelClass}>Vencimento (Dia)</label><input type="number" min="1" max="31" value={novoGastoFixo.diaVencimento} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, diaVencimento: e.target.value})} className={inputClass} required /></div>
+                        <div className="text-center mb-6"><h2 className="text-xl font-black text-white uppercase tracking-wider">Gasto Fixo</h2></div>
+                        <form onSubmit={handleCadastrarGastoFixo} className="space-y-4">
+                            <div><label className={labelClass}>Descrição</label><input type="text" value={novoGastoFixo.descricao} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, descricao: e.target.value})} className={inputClass} required /></div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div><label className={labelClass}>Valor</label><input type="text" value={novoGastoFixo.valorReais} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, valorReais: e.target.value})} className={inputClass} required /></div>
+                                <div><label className={labelClass}>Dia Venc.</label><input type="number" min="1" max="31" value={novoGastoFixo.diaVencimento} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, diaVencimento: e.target.value})} className={inputClass} required /></div>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className={labelClass}>Categoria</label>
-                                    <div className="flex gap-2">
-                                        <select value={novoGastoFixo.idCategoria} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, idCategoria: e.target.value})} className={`${inputClass} appearance-none flex-grow custom-scrollbar`}>
-                                            <optgroup label="SISTEMA" className="text-sky-400">{categorias.filter(c => c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}</optgroup>
-                                            <optgroup label="PESSOAL" className="text-fuchsia-400">{categorias.filter(c => !c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}</optgroup>
-                                        </select>
-                                        <button type="button" onClick={handleCriarCategoria} className="bg-[#1a2133] border border-gray-800 text-white font-bold rounded-xl px-4 hover:bg-sky-500 transition-colors shrink-0">+</button>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className={labelClass}>Pagamento</label>
-                                    <select value={novoGastoFixo.metodoPagamento} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, metodoPagamento: e.target.value})} className={`${inputClass} appearance-none`}>
-                                        <option value="PIX">PIX</option><option value="DEBITO">DÉBITO</option><option value="CREDITO">CRÉDITO</option><option value="DINHEIRO">DINHEIRO</option>
-                                    </select>
-                                </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div><label className={labelClass}>Categoria</label><div className="flex gap-2"><select value={novoGastoFixo.idCategoria} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, idCategoria: e.target.value})} className={`${inputClass} appearance-none flex-grow`}><optgroup label="SISTEMA" className="text-sky-400">{categorias.filter(c => c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}</optgroup><optgroup label="PESSOAL" className="text-fuchsia-400">{categorias.filter(c => !c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}</optgroup></select><button type="button" onClick={handleCriarCategoria} className="bg-[#1a2133] border border-gray-800 text-white font-bold rounded-xl px-4 hover:bg-sky-500 shrink-0">+</button></div></div>
+                                <div><label className={labelClass}>Pagamento</label><select value={novoGastoFixo.metodoPagamento} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, metodoPagamento: e.target.value})} className={`${inputClass} appearance-none`}><option value="PIX">PIX</option><option value="DEBITO">DÉBITO</option></select></div>
                             </div>
-                            <div className="grid grid-cols-2 gap-3 md:gap-4 mt-6 md:mt-8 pt-4 border-t border-gray-800/50">
-                                <button type="button" onClick={() => setIsModalFixoOpen(false)} className="w-full px-4 sm:px-5 py-3 md:py-4 font-bold text-gray-400 border border-gray-800 rounded-full hover:bg-gray-800 uppercase text-[10px] md:text-xs">Cancelar</button>
-                                <button type="submit" disabled={enviandoFixo} className="w-full px-4 sm:px-5 py-3 md:py-4 font-black text-white bg-sky-500 rounded-full hover:bg-sky-400 uppercase text-[10px] md:text-xs">{enviandoFixo ? '...' : 'Salvar'}</button>
+                            <div className="grid grid-cols-2 gap-3 mt-6 pt-4 border-t border-gray-800/50">
+                                <button type="button" onClick={() => setIsModalFixoOpen(false)} className="w-full py-3 font-bold text-gray-400 border border-gray-800 rounded-full hover:bg-gray-800 text-[10px] uppercase">Cancelar</button>
+                                <button type="submit" disabled={enviandoFixo} className="w-full py-3 font-black text-white bg-sky-500 rounded-full hover:bg-sky-400 text-[10px] uppercase">Salvar</button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
 
-            {/* --- MODAL DE CATEGORIAS --- */}
             {isModalCategoriasOpen && (
                 <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-3 sm:p-4 z-[60] transition-opacity backdrop-blur-sm" onClick={() => setIsModalCategoriasOpen(false)}>
                     <div className={`${cardClass} w-full max-w-md max-h-[90vh] overflow-y-auto custom-scrollbar`} onClick={(e) => e.stopPropagation()}>
-
-                        <div className="text-center mb-6 md:mb-8">
-                            <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-wider">Categorias</h2>
-                        </div>
-
+                        <div className="text-center mb-6 md:mb-8"><h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-wider">Categorias</h2></div>
                         <div className="max-h-64 overflow-y-auto pr-2 space-y-2 md:space-y-3 custom-scrollbar">
                             {categorias.map(cat => (
                                 <div key={cat.id} className="flex justify-between items-center bg-[#0b0f19] border border-gray-800/50 p-3 md:p-4 rounded-xl md:rounded-2xl gap-3 transition-colors hover:border-gray-700">
                                     <span className="text-white font-bold text-xs md:text-sm truncate flex-1 min-w-0">{cat.nome || cat.category_name}</span>
                                     {cat.isGlobal ? (
-                                        <span className="text-gray-600 text-[8px] md:text-[9px] font-black uppercase tracking-widest shrink-0 border border-gray-800 px-2 py-0.5 rounded-md">🔒 Sist.</span>
+                                        <span className="text-gray-600 text-[8px] font-black uppercase tracking-widest shrink-0 border border-gray-800 px-2 py-0.5 rounded-md">🔒 Sist.</span>
                                     ) : (
-                                        <button onClick={() => handleExcluirCategoria(cat.id, cat.nome || cat.category_name)} className="text-gray-500 hover:text-red-500 shrink-0 p-2 transition-colors" title="Apagar Categoria">🗑</button>
+                                        <button onClick={() => handleExcluirCategoria(cat.id, cat.nome || cat.category_name)} className="text-gray-500 hover:text-red-500 shrink-0 p-2" title="Apagar Categoria">🗑</button>
                                     )}
                                 </div>
                             ))}
                         </div>
-
                         <div className="mt-6 md:mt-8 pt-5 border-t border-gray-800/50 flex gap-3">
-                            <button
-                                onClick={handleCriarCategoria}
-                                className="flex-1 px-3 py-3 md:py-4 font-black text-sky-400 bg-[#1a2133] border border-sky-500/20 rounded-xl hover:bg-sky-500 hover:text-white transition-all uppercase text-[10px] md:text-xs tracking-wider shadow-lg"
-                            >
-                                + NOVA CATEGORIA
-                            </button>
-                            <button
-                                onClick={() => setIsModalCategoriasOpen(false)}
-                                className="flex-1 px-3 py-3 md:py-4 font-black text-white bg-gray-800 rounded-xl hover:bg-gray-700 transition-all uppercase text-[10px] md:text-xs tracking-wider"
-                            >
-                                FECHAR
-                            </button>
+                            <button onClick={handleCriarCategoria} className="flex-1 px-3 py-3 font-black text-sky-400 bg-[#1a2133] border border-sky-500/20 rounded-xl hover:bg-sky-500 hover:text-white uppercase text-[10px] shadow-lg">+ NOVA</button>
+                            <button onClick={() => setIsModalCategoriasOpen(false)} className="flex-1 px-3 py-3 font-black text-white bg-gray-800 rounded-xl hover:bg-gray-700 uppercase text-[10px]">FECHAR</button>
                         </div>
-
                     </div>
                 </div>
             )}
