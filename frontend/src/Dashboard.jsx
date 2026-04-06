@@ -10,7 +10,7 @@ export default function Dashboard() {
     const [categorias, setCategorias] = useState([]);
     const [gastosFixos, setGastosFixos] = useState([]);
 
-    // --- NOVOS ESTADOS PARA RENDA ---
+    const [rendas, setRendas] = useState([]);
     const [totalRendas, setTotalRendas] = useState(0);
     const [isModalRendaOpen, setIsModalRendaOpen] = useState(false);
     const [enviandoRenda, setEnviandoRenda] = useState(false);
@@ -37,7 +37,6 @@ export default function Dashboard() {
             const token = localStorage.getItem('token');
             const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-            // Busca Despesas
             const respostaDespesas = await fetch(`${import.meta.env.VITE_API_URL}/despesas?size=1000`, { method: 'GET', headers });
             if (respostaDespesas.ok) {
                 const pagina = await respostaDespesas.json();
@@ -47,7 +46,6 @@ export default function Dashboard() {
                 localStorage.removeItem('token'); window.location.href = '/';
             }
 
-            // Busca Categorias
             const respostaCategorias = await fetch(`${import.meta.env.VITE_API_URL}/categorias?size=1000`, { method: 'GET', headers });
             if (respostaCategorias.ok) {
                 const dadosCat = await respostaCategorias.json();
@@ -59,21 +57,20 @@ export default function Dashboard() {
                 }
             }
 
-            // Busca Fixos
             try {
                 const respostaFixos = await fetch(`${import.meta.env.VITE_API_URL}/gastos-fixos?size=1000`, { method: 'GET', headers });
                 if (respostaFixos.ok) setGastosFixos((await respostaFixos.json()).content || []);
             } catch (e) { console.error("Erro ao buscar gastos fixos:", e); setGastosFixos([]); }
 
-            // --- BUSCA RENDAS ---
             try {
                 const respostaRendas = await fetch(`${import.meta.env.VITE_API_URL}/rendas?size=1000`, { method: 'GET', headers });
                 if (respostaRendas.ok) {
                     const dadosRenda = await respostaRendas.json();
                     const rendasList = dadosRenda.content || [];
+                    setRendas(rendasList); // Guardamos a lista aqui
                     setTotalRendas(rendasList.reduce((acc, r) => acc + ((r.valorCentavos || 0) / 100), 0));
                 }
-            } catch (e) { console.error("Erro ao buscar rendas:", e); setTotalRendas(0); }
+            } catch (e) { console.error("Erro ao buscar rendas:", e); setTotalRendas(0); setRendas([]); }
 
         } catch (erro) {
             console.error("Erro geral ao buscar dados:", erro);
@@ -91,7 +88,6 @@ export default function Dashboard() {
             const token = localStorage.getItem('token');
             const valorCentavos = Math.round(parseFloat(novaRenda.valorReais.replace(/\./g, '').replace(',', '.')) * 100);
 
-            // CORREÇÃO: Enviamos a data direto (ex: "2026-04-06") para combinar com o LocalDate do Java
             const resposta = await fetch(`${import.meta.env.VITE_API_URL}/rendas`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -107,15 +103,21 @@ export default function Dashboard() {
                 setIsModalRendaOpen(false);
                 buscarDados();
             } else {
-                // Se der erro, pega a mensagem do Java para sabermos o motivo exato
                 const erroTexto = await resposta.text();
                 alert(`Erro do Servidor: ${erroTexto || resposta.status}`);
             }
-        } catch (erro) {
-            console.error("Erro no cadastro de renda:", erro);
-        } finally {
-            setEnviandoRenda(false);
-        }
+        } catch (erro) { console.error("Erro no cadastro de renda:", erro); } finally { setEnviandoRenda(false); }
+    };
+
+    const handleExcluirRenda = async (id, descricao) => {
+        if (!window.confirm(`Deseja apagar a entrada de dinheiro "${descricao}"?`)) return;
+        try {
+            const resposta = await fetch(`${import.meta.env.VITE_API_URL}/rendas/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (resposta.ok) buscarDados();
+        } catch (erro) { console.error("Erro ao excluir renda:", erro); }
     };
 
     const handleCadastrarDespesa = async (e) => {
@@ -137,11 +139,7 @@ export default function Dashboard() {
                 buscarDados();
                 setPaginaDespesas(1);
             }
-        } catch (erro) {
-            console.error("Erro no cadastro de despesa:", erro);
-        } finally {
-            setEnviandoForm(false);
-        }
+        } catch (erro) { console.error("Erro no cadastro de despesa:", erro); } finally { setEnviandoForm(false); }
     };
 
     const handleCadastrarGastoFixo = async (e) => {
@@ -162,11 +160,7 @@ export default function Dashboard() {
                 buscarDados();
                 setPaginaFixos(1);
             }
-        } catch (erro) {
-            console.error("Erro no cadastro de fixo:", erro);
-        } finally {
-            setEnviandoFixo(false);
-        }
+        } catch (erro) { console.error("Erro no cadastro de fixo:", erro); } finally { setEnviandoFixo(false); }
     };
 
     const handleCriarCategoria = async () => {
@@ -215,12 +209,10 @@ export default function Dashboard() {
     const formatarMoeda = (valor) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
     const formatarData = (dataIso) => { if (!dataIso) return '--/--/----'; return new Date(dataIso).toLocaleDateString('pt-BR', {timeZone: 'UTC'}); };
 
-    // --- MATEMÁTICA INTELIGENTE DO SISTEMA ---
     const totalFixos = gastosFixos.reduce((acc, f) => acc + ((f.valorCentavos || 0) / 100), 0);
     const totalSaidas = totalGastos + totalFixos;
     const saldoConsolidado = totalRendas - totalSaidas;
 
-    // Cor dinâmica do Saldo
     const corSaldoCard = saldoConsolidado >= 0 ? "from-emerald-600 to-teal-900 shadow-emerald-900/20" : "from-rose-600 to-red-900 shadow-rose-900/20";
 
     const totalTransacoes = despesas.length + gastosFixos.length;
@@ -285,7 +277,6 @@ export default function Dashboard() {
                     <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter truncate">{primeiroNome}!</h2>
                 </div>
 
-                {/* --- CARD DINÂMICO DE SALDO --- */}
                 <div className={`bg-gradient-to-br ${corSaldoCard} rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-7 mb-8 md:mb-10 shadow-lg transform hover:scale-[1.02] transition-all duration-500`}>
                     <p className="text-white/80 font-medium text-[10px] md:text-xs tracking-wider uppercase mb-1">Saldo Atual</p>
                     <p className="text-2xl md:text-3xl font-black text-white truncate">{carregando ? '...' : formatarMoeda(saldoConsolidado)}</p>
@@ -297,7 +288,6 @@ export default function Dashboard() {
                 <nav className="flex flex-col gap-2 md:gap-3 flex-grow overflow-y-auto custom-scrollbar pr-2">
                     <p className="text-gray-600 text-[9px] md:text-[10px] font-black tracking-[0.2em] uppercase mb-1 ml-2">Ações Rápidas</p>
 
-                    {/* --- BOTÃO REGISTRAR RENDA AGORA ESTÁ ATIVO --- */}
                     <button onClick={() => { setIsModalRendaOpen(true); setMenuMobileAberto(false); }} className={sidebarButton}>
                         <div className="flex items-center gap-3"><span className="text-emerald-400">💰</span> Registrar Renda</div>
                     </button>
@@ -319,8 +309,7 @@ export default function Dashboard() {
                         <div className="flex items-center gap-3"><span>🎯</span> Metas e Reservas</div><span className="bg-fuchsia-500/20 text-fuchsia-400 text-[8px] px-2 py-0.5 rounded-sm uppercase tracking-widest hidden md:block">Em breve</span>
                     </div>
                     <div className={`${sidebarButton} opacity-50 cursor-not-allowed flex`} title="Funcionalidade em desenvolvimento">
-                        <div className="flex items-center gap-3"><span>🗑️</span> Lixeira e Restauração</div>
-                        <span className="bg-rose-500/20 text-rose-400 text-[8px] px-2 py-0.5 rounded-sm uppercase tracking-widest hidden md:block">Em breve</span>
+                        <div className="flex items-center gap-3"><span>🗑️</span> Lixeira e Restauração</div><span className="bg-rose-500/20 text-rose-400 text-[8px] px-2 py-0.5 rounded-sm uppercase tracking-widest hidden md:block">Em breve</span>
                     </div>
                 </nav>
 
@@ -343,7 +332,6 @@ export default function Dashboard() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-                        {/* --- CARDS DE RESUMO ATUALIZADOS --- */}
                         <div className={`${cardClass} flex items-center justify-between`}>
                             <div className="flex flex-col items-start min-w-0 flex-1 pr-3">
                                 <p className="text-gray-500 font-bold text-[9px] md:text-[10px] uppercase tracking-widest mb-1">Renda Total (Entradas)</p>
@@ -432,7 +420,7 @@ export default function Dashboard() {
 
                         <div className="space-y-6 md:space-y-8">
                             <div className={cardClass}>
-                                <h2 className="text-xs md:text-sm font-black text-white uppercase tracking-widest mb-4 md:mb-6">Detalhamento</h2>
+                                <h2 className="text-xs md:text-sm font-black text-white uppercase tracking-widest mb-4 md:mb-6">Detalhamento de Gastos</h2>
                                 {resumoCategorias.length === 0 ? (
                                     <p className="text-gray-500 text-xs md:text-sm">Sem dados suficientes.</p>
                                 ) : (
@@ -460,12 +448,36 @@ export default function Dashboard() {
                                     </div>
                                 )}
                             </div>
+
+                            {/* --- HISTÓRICO DE RENDAS --- */}
+                            <div className={cardClass}>
+                                <h2 className="text-xs md:text-sm font-black text-emerald-400 uppercase tracking-widest mb-4 md:mb-6">Histórico de Entradas</h2>
+                                <div className="space-y-1">
+                                    {rendas.length === 0 ? (
+                                        <p className="text-gray-500 text-xs py-2">Nenhuma renda registrada.</p>
+                                    ) : (
+                                        rendas.map((renda, index) => (
+                                            <div key={index} className="group flex justify-between items-center py-3 border-b border-gray-800/50 hover:bg-[#1a2133] rounded-xl px-2 transition-colors gap-3">
+                                                <div className="flex flex-col flex-1 min-w-0">
+                                                    <p className="font-extrabold text-xs text-gray-200 truncate">{renda.descricao || 'Entrada'}</p>
+                                                    <span className="text-[10px] font-medium text-gray-500">{formatarData(renda.dataRecebimento)}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                                                    <p className="font-bold text-emerald-400 text-sm md:text-base">+ {formatarMoeda((renda.valorCentavos || 0) / 100)}</p>
+                                                    <button onClick={() => handleExcluirRenda(renda.id, renda.descricao || 'Entrada')} className="text-gray-600 hover:text-red-500 md:opacity-0 group-hover:opacity-100 transition-all p-2" title="Apagar Renda">🗑</button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
             </main>
 
-            {/* --- NOVO MODAL DE RENDA --- */}
+            {/* MODAIS */}
             {isModalRendaOpen && (
                 <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-3 sm:p-4 z-[60] transition-opacity backdrop-blur-sm" onClick={() => setIsModalRendaOpen(false)}>
                     <div className={`${cardClass} w-full max-w-xl border-emerald-500/30 shadow-emerald-900/20`} onClick={(e) => e.stopPropagation()}>
@@ -490,7 +502,6 @@ export default function Dashboard() {
                 </div>
             )}
 
-            {/* --- MODAIS ANTIGOS MANTIDOS --- */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-3 sm:p-4 z-[60] transition-opacity backdrop-blur-sm" onClick={() => setIsModalOpen(false)}>
                     <div className={`${cardClass} w-full max-w-xl max-h-[90vh] overflow-y-auto custom-scrollbar`} onClick={(e) => e.stopPropagation()}>
