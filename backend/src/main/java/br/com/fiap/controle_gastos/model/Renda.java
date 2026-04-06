@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Table(name = "trx_income")
 @Entity(name = "Renda")
@@ -18,19 +17,20 @@ import java.util.UUID;
 public class Renda {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
+    @Column(name = "income_description")
     private String descricao;
 
-    @Column(name = "valor_centavos")
+    @Column(name = "income_amount_cents")
     private Long valorCentavos;
 
-    @Column(name = "data_recebimento")
+    @Column(name = "income_date")
     private LocalDate dataRecebimento;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id")
+    @JoinColumn(name = "id_master_user")
     private Usuario usuario;
 
     public Renda(String descricao, Long valorCentavos, LocalDate dataRecebimento, Usuario usuario) {

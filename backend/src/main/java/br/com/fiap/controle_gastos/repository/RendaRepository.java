@@ -7,6 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;
 
-public interface RendaRepository extends JpaRepository<Renda, UUID> {
+public interface RendaRepository extends JpaRepository<Renda, Long> {
     Page<Renda> findAllByUsuarioId(UUID usuarioId, Pageable paginacao);
 }

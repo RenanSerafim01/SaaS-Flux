@@ -84,19 +84,22 @@ export default function Dashboard() {
 
     useEffect(() => { buscarDados(); }, []);
 
-    // --- NOVA FUNÇÃO DE CADASTRAR RENDA ---
     const handleCadastrarRenda = async (e) => {
         e.preventDefault();
         setEnviandoRenda(true);
         try {
             const token = localStorage.getItem('token');
             const valorCentavos = Math.round(parseFloat(novaRenda.valorReais.replace(/\./g, '').replace(',', '.')) * 100);
-            const dataFormatada = new Date(`${novaRenda.dataRecebimento}T00:00:00Z`).toISOString();
 
+            // CORREÇÃO: Enviamos a data direto (ex: "2026-04-06") para combinar com o LocalDate do Java
             const resposta = await fetch(`${import.meta.env.VITE_API_URL}/rendas`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ descricao: novaRenda.descricao, valorCentavos, dataRecebimento: dataFormatada })
+                body: JSON.stringify({
+                    descricao: novaRenda.descricao,
+                    valorCentavos: valorCentavos,
+                    dataRecebimento: novaRenda.dataRecebimento
+                })
             });
 
             if (resposta.ok) {
@@ -104,7 +107,9 @@ export default function Dashboard() {
                 setIsModalRendaOpen(false);
                 buscarDados();
             } else {
-                alert("Ocorreu um erro ao registrar a renda.");
+                // Se der erro, pega a mensagem do Java para sabermos o motivo exato
+                const erroTexto = await resposta.text();
+                alert(`Erro do Servidor: ${erroTexto || resposta.status}`);
             }
         } catch (erro) {
             console.error("Erro no cadastro de renda:", erro);
@@ -220,10 +225,6 @@ export default function Dashboard() {
 
     const totalTransacoes = despesas.length + gastosFixos.length;
 
-    const idsCategoriasUsadas = new Set([...despesas.map(d => d.categoria?.id || d.categoria), ...gastosFixos.map(f => f.categoria?.id || f.categoria)]);
-    idsCategoriasUsadas.delete(undefined); idsCategoriasUsadas.delete(null);
-    const qtdCategoriasEmUso = idsCategoriasUsadas.size;
-
     const resumoCategorias = categorias.map(cat => {
         const totalAvulsas = despesas.filter(d => (d.categoria?.id || d.categoria) === cat.id).reduce((acc, d) => acc + ((d.valorCentavos || 0) / 100), 0);
         const totalGastosFixos = gastosFixos.filter(f => (f.categoria?.id || f.categoria) === cat.id).reduce((acc, f) => acc + ((f.valorCentavos || 0) / 100), 0);
@@ -316,6 +317,10 @@ export default function Dashboard() {
                     </div>
                     <div className={`${sidebarButton} opacity-50 cursor-not-allowed flex`} title="Funcionalidade em desenvolvimento">
                         <div className="flex items-center gap-3"><span>🎯</span> Metas e Reservas</div><span className="bg-fuchsia-500/20 text-fuchsia-400 text-[8px] px-2 py-0.5 rounded-sm uppercase tracking-widest hidden md:block">Em breve</span>
+                    </div>
+                    <div className={`${sidebarButton} opacity-50 cursor-not-allowed flex`} title="Funcionalidade em desenvolvimento">
+                        <div className="flex items-center gap-3"><span>🗑️</span> Lixeira e Restauração</div>
+                        <span className="bg-rose-500/20 text-rose-400 text-[8px] px-2 py-0.5 rounded-sm uppercase tracking-widest hidden md:block">Em breve</span>
                     </div>
                 </nav>
 
