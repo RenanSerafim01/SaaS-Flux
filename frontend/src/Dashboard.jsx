@@ -577,10 +577,15 @@ export default function Dashboard() {
                 </div>
             )}
 
+            {/* --- MODAL DE CATEGORIAS --- */}
             {isModalCategoriasOpen && (
                 <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-3 sm:p-4 z-[60] transition-opacity backdrop-blur-sm" onClick={() => setIsModalCategoriasOpen(false)}>
                     <div className={`${cardClass} w-full max-w-md max-h-[90vh] overflow-y-auto custom-scrollbar`} onClick={(e) => e.stopPropagation()}>
-                        <div className="text-center mb-6 md:mb-8"><h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-wider">Categorias</h2></div>
+
+                        <div className="text-center mb-6 md:mb-8">
+                            <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-wider">Categorias</h2>
+                        </div>
+
                         <div className="max-h-64 overflow-y-auto pr-2 space-y-2 md:space-y-3 custom-scrollbar">
                             {categorias.map(cat => (
                                 <div key={cat.id} className="flex justify-between items-center bg-[#0b0f19] border border-gray-800/50 p-3 md:p-4 rounded-xl md:rounded-2xl gap-3 transition-colors hover:border-gray-700">
@@ -588,14 +593,27 @@ export default function Dashboard() {
                                     {cat.isGlobal ? (
                                         <span className="text-gray-600 text-[8px] md:text-[9px] font-black uppercase tracking-widest shrink-0 border border-gray-800 px-2 py-0.5 rounded-md">🔒 Sist.</span>
                                     ) : (
-                                        <button onClick={() => handleExcluirCategoria(cat.id, cat.nome || cat.category_name)} className="text-gray-500 hover:text-red-500 shrink-0 p-2" title="Apagar Categoria">🗑</button>
+                                        <button onClick={() => handleExcluirCategoria(cat.id, cat.nome || cat.category_name)} className="text-gray-500 hover:text-red-500 shrink-0 p-2 transition-colors" title="Apagar Categoria">🗑</button>
                                     )}
                                 </div>
                             ))}
                         </div>
-                        <div className="mt-6 md:mt-8 pt-4 border-t border-gray-800/50">
-                            <button onClick={() => setIsModalCategoriasOpen(false)} className="w-full px-5 py-3 md:py-4 font-black text-white bg-sky-500 rounded-full hover:bg-sky-400 uppercase text-[10px] md:text-xs tracking-wider">FECHAR</button>
+
+                        <div className="mt-6 md:mt-8 pt-5 border-t border-gray-800/50 flex gap-3">
+                            <button
+                                onClick={handleCriarCategoria}
+                                className="flex-1 px-3 py-3 md:py-4 font-black text-sky-400 bg-[#1a2133] border border-sky-500/20 rounded-xl hover:bg-sky-500 hover:text-white transition-all uppercase text-[10px] md:text-xs tracking-wider shadow-lg"
+                            >
+                                + NOVA CATEGORIA
+                            </button>
+                            <button
+                                onClick={() => setIsModalCategoriasOpen(false)}
+                                className="flex-1 px-3 py-3 md:py-4 font-black text-white bg-gray-800 rounded-xl hover:bg-gray-700 transition-all uppercase text-[10px] md:text-xs tracking-wider"
+                            >
+                                FECHAR
+                            </button>
                         </div>
+
                     </div>
                 </div>
             )}
