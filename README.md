@@ -75,7 +75,7 @@ O motor da aplicação garante que todas as regras de negócio sejam aplicadas r
 
 ### 1. Clonar o repositório
 ```bash
-git clone [https://github.com/RenanSerafim01/SaaS-Flux.git](https://github.com/RenanSerafim01/SaaS-Flux.git)
+git clone https://github.com/RenanSerafim01/SaaS-Flux.git
 ```
 
 ### 2. Back-end (Spring Boot)
