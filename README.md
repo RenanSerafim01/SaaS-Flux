@@ -16,8 +16,8 @@
 ## 🔗 Links Rápidos
 Teste a aplicação na nuvem agora mesmo:
 
-* 🚀 **Aplicação em Produção (Front-end):** [COLE_AQUI_O_LINK_DA_VERCEL]
-* 📚 **Documentação da API (Swagger):** [COLE_AQUI_O_LINK_DO_RENDER]/swagger-ui/index.html
+* 🚀 **Aplicação em Produção (Front-end):** https://flux-app-renan.vercel.app/
+* 📚 **Documentação da API (Swagger):** https://saas-flux-api.onrender.com//swagger-ui/index.html
 *(Nota: O back-end está hospedado em um plano gratuito. A primeira requisição pode levar cerca de 50 segundos para "acordar" o servidor).*
 
 ---
@@ -25,7 +25,8 @@ Teste a aplicação na nuvem agora mesmo:
 ## 📸 Preview da Aplicação
 
 ### Painel de Controle (Dashboard)
-[ARRASTE_A_IMAGEM_DO_SEU_DASHBOARD_AQUI]
+<img width="1920" height="913" alt="image" src="https://github.com/user-attachments/assets/c40d78c9-6d53-4dd0-8ae2-030ae164aa4c" />
+
 
 ---
 
