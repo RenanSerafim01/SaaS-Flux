@@ -180,10 +180,12 @@ function LandingPage() {
                     <h2 className="text-[10px] md:text-sm font-black text-sky-500 uppercase tracking-widest mb-2">Recursos Ativos</h2>
                     <p className="text-2xl md:text-4xl font-extrabold text-white uppercase tracking-tight">O que já construímos</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-                    <FeatureCard icon="🎛️" title="Dashboard Premium" description="Acompanhe seus gastos com uma interface noturna moderna, barras de progresso automáticas e foco total na clareza dos dados." />
-                    <FeatureCard icon="↻" title="Gestão de Recorrências" description="Separe os gastos avulsos das suas assinaturas e contas fixas. Saiba exatamente o peso das suas despesas mensais." />
-                    <FeatureCard icon="📊" title="Categorias Inteligentes" description="Organize o dinheiro do seu jeito. Use nossas categorias de sistema ou crie marcadores personalizados para a sua rotina." />
+                {/* --- GRID ATUALIZADA PARA ACOMODAR 4 CARDS --- */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+                    <FeatureCard icon="💰" title="Gestão de Renda" description="Controle não só o que sai, mas também o que entra. Registre ganhos e acompanhe o cálculo de saldo consolidado em tempo real." />
+                    <FeatureCard icon="🎛️" title="Dashboard Premium" description="Acompanhe seus gastos com uma interface noturna moderna, barras de progresso automáticas e foco total na clareza." />
+                    <FeatureCard icon="↻" title="Recorrências" description="Separe os gastos avulsos das suas assinaturas e contas fixas. Saiba exatamente o peso das suas despesas mensais." />
+                    <FeatureCard icon="📊" title="Categorias" description="Organize o dinheiro do seu jeito. Use nossas categorias de sistema ou crie marcadores personalizados para a sua rotina." />
                 </div>
             </section>
 
@@ -197,9 +199,9 @@ function LandingPage() {
                             O Flux está em evolução contínua. Estamos trabalhando pesado nos bastidores para trazer integrações diretas e inteligência artificial para o seu bolso.
                         </p>
                     </div>
+                    {/* --- GESTÃO DE RENDA REMOVIDA DAQUI --- */}
                     <div className="space-y-4 md:space-y-6">
                         <FeatureCard icon="🏦" title="Conexão Bancária" description="Integração via Open Finance para puxar seus saldos e transações automaticamente do seu banco." badge="Em breve" />
-                        <FeatureCard icon="💰" title="Gestão de Renda" description="Controle não só o que sai, mas também o que entra, tendo a visão completa do seu lucro no mês." badge="Em Breve" />
                         <FeatureCard icon="🎯" title="Metas e Reservas" description="Defina objetivos, guarde dinheiro com propósito e acompanhe a evolução do seu patrimônio." badge="Em Breve" />
                         <FeatureCard icon="📈" title="Relatórios com IA" description="Receba insights e conselhos gerados por Inteligência Artificial baseados no seu padrão de consumo." badge="Em breve" />
                     </div>
