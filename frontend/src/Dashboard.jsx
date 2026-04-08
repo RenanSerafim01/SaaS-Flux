@@ -487,10 +487,10 @@ export default function Dashboard() {
                         <form onSubmit={handleCadastrarRenda} className="space-y-4 md:space-y-5">
                             <div>
                                 <label className={labelClass}>Origem da Renda</label>
-                                <input type="text" value={novaRenda.descricao} onChange={(e) => setNovaRenda({...novaRenda, descricao: e.target.value})} className={inputClass} placeholder="Ex: Salário, Freelance..." required />
+                                <input type="text" value={novaRenda.descricao} onChange={(e) => setNovaRenda({...novaRenda, descricao: e.target.value})} className={inputClass} placeholder="Ex: Salário" required />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div><label className={labelClass}>Valor (R$)</label><input type="text" value={novaRenda.valorReais} onChange={(e) => setNovaRenda({...novaRenda, valorReais: e.target.value})} className={inputClass} placeholder="5000,00" required /></div>
+                                <div><label className={labelClass}>Valor (R$)</label><input type="text" value={novaRenda.valorReais} onChange={(e) => setNovaRenda({...novaRenda, valorReais: e.target.value})} className={inputClass} placeholder="Ex: 5000,00" required /></div>
                                 <div><label className={labelClass}>Data de Recebimento</label><input type="date" value={novaRenda.dataRecebimento} onChange={(e) => setNovaRenda({...novaRenda, dataRecebimento: e.target.value})} className={inputClass} required /></div>
                             </div>
                             <div className="grid grid-cols-2 gap-3 md:gap-4 mt-6 md:mt-8 pt-4 border-t border-gray-800/50">
@@ -509,7 +509,7 @@ export default function Dashboard() {
                         <form onSubmit={handleCadastrarDespesa} className="space-y-4 md:space-y-5">
                             <div><label className={labelClass}>Descrição</label><input type="text" value={novaDespesa.descricao} onChange={(e) => setNovaDespesa({...novaDespesa, descricao: e.target.value})} className={inputClass} placeholder="Ex: Mercado Semanal" required /></div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div><label className={labelClass}>Valor (R$)</label><input type="text" value={novaDespesa.valorReais} onChange={(e) => setNovaDespesa({...novaDespesa, valorReais: e.target.value})} className={inputClass} placeholder="150,00" required /></div>
+                                <div><label className={labelClass}>Valor (R$)</label><input type="text" value={novaDespesa.valorReais} onChange={(e) => setNovaDespesa({...novaDespesa, valorReais: e.target.value})} className={inputClass} placeholder="Ex: 150,00" required /></div>
                                 <div><label className={labelClass}>Data</label><input type="date" value={novaDespesa.dataDespesa} onChange={(e) => setNovaDespesa({...novaDespesa, dataDespesa: e.target.value})} className={inputClass} required /></div>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -540,7 +540,7 @@ export default function Dashboard() {
                                     value={novoGastoFixo.descricao}
                                     onChange={(e) => setNovoGastoFixo({...novoGastoFixo, descricao: e.target.value})}
                                     className={inputClass}
-                                    placeholder="Ex: Aluguel, Internet, Academia..."
+                                    placeholder="Ex: Aluguel"
                                     required
                                 />
                             </div>
@@ -603,6 +603,8 @@ export default function Dashboard() {
                                     >
                                         <option value="PIX">PIX</option>
                                         <option value="DEBITO">DÉBITO</option>
+                                        <option value="CREDITO">CRÉDITO</option>
+                                        <option value="DINHEIRO">DINHEIRO</option>
                                     </select>
                                 </div>
                             </div>
