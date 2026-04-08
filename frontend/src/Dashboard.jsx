@@ -12,15 +12,11 @@ export default function Dashboard() {
 
     const [rendas, setRendas] = useState([]);
     const [totalRendas, setTotalRendas] = useState(0);
+
+    // Estados de Criação
     const [isModalRendaOpen, setIsModalRendaOpen] = useState(false);
     const [enviandoRenda, setEnviandoRenda] = useState(false);
     const [novaRenda, setNovaRenda] = useState({ descricao: '', valorReais: '', dataRecebimento: new Date().toISOString().split('T')[0] });
-
-    const [menuMobileAberto, setMenuMobileAberto] = useState(false);
-
-    const [paginaDespesas, setPaginaDespesas] = useState(1);
-    const [paginaFixos, setPaginaFixos] = useState(1);
-    const itensPorPagina = 6;
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [enviandoForm, setEnviandoForm] = useState(false);
@@ -30,7 +26,22 @@ export default function Dashboard() {
     const [enviandoFixo, setEnviandoFixo] = useState(false);
     const [novoGastoFixo, setNovoGastoFixo] = useState({ descricao: '', valorReais: '', diaVencimento: '10', idCategoria: '', metodoPagamento: 'DEBITO' });
 
+    // ESTADOS DE EDIÇÃO
+    const [isModalEditarDespesaOpen, setIsModalEditarDespesaOpen] = useState(false);
+    const [despesaEmEdicao, setDespesaEmEdicao] = useState(null);
+
+    const [isModalEditarFixoOpen, setIsModalEditarFixoOpen] = useState(false);
+    const [fixoEmEdicao, setFixoEmEdicao] = useState(null);
+
+    const [isModalEditarRendaOpen, setIsModalEditarRendaOpen] = useState(false);
+    const [rendaEmEdicao, setRendaEmEdicao] = useState(null);
+
     const [isModalCategoriasOpen, setIsModalCategoriasOpen] = useState(false);
+    const [menuMobileAberto, setMenuMobileAberto] = useState(false);
+
+    const [paginaDespesas, setPaginaDespesas] = useState(1);
+    const [paginaFixos, setPaginaFixos] = useState(1);
+    const itensPorPagina = 6;
 
     const buscarDados = async () => {
         try {
@@ -67,7 +78,7 @@ export default function Dashboard() {
                 if (respostaRendas.ok) {
                     const dadosRenda = await respostaRendas.json();
                     const rendasList = dadosRenda.content || [];
-                    setRendas(rendasList); // Guardamos a lista aqui
+                    setRendas(rendasList);
                     setTotalRendas(rendasList.reduce((acc, r) => acc + ((r.valorCentavos || 0) / 100), 0));
                 }
             } catch (e) { console.error("Erro ao buscar rendas:", e); setTotalRendas(0); setRendas([]); }
@@ -81,6 +92,9 @@ export default function Dashboard() {
 
     useEffect(() => { buscarDados(); }, []);
 
+    // =========================================================================
+    // FUNÇÕES DE CRIAÇÃO (POST)
+    // =========================================================================
     const handleCadastrarRenda = async (e) => {
         e.preventDefault();
         setEnviandoRenda(true);
@@ -91,11 +105,7 @@ export default function Dashboard() {
             const resposta = await fetch(`${import.meta.env.VITE_API_URL}/rendas`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    descricao: novaRenda.descricao,
-                    valorCentavos: valorCentavos,
-                    dataRecebimento: novaRenda.dataRecebimento
-                })
+                body: JSON.stringify({ descricao: novaRenda.descricao, valorCentavos: valorCentavos, dataRecebimento: novaRenda.dataRecebimento })
             });
 
             if (resposta.ok) {
@@ -103,21 +113,9 @@ export default function Dashboard() {
                 setIsModalRendaOpen(false);
                 buscarDados();
             } else {
-                const erroTexto = await resposta.text();
-                alert(`Erro do Servidor: ${erroTexto || resposta.status}`);
+                alert(`Erro do Servidor: ${await resposta.text() || resposta.status}`);
             }
-        } catch (erro) { console.error("Erro no cadastro de renda:", erro); } finally { setEnviandoRenda(false); }
-    };
-
-    const handleExcluirRenda = async (id, descricao) => {
-        if (!window.confirm(`Deseja apagar a entrada de dinheiro "${descricao}"?`)) return;
-        try {
-            const resposta = await fetch(`${import.meta.env.VITE_API_URL}/rendas/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-            });
-            if (resposta.ok) buscarDados();
-        } catch (erro) { console.error("Erro ao excluir renda:", erro); }
+        } catch (erro) { console.error(erro); } finally { setEnviandoRenda(false); }
     };
 
     const handleCadastrarDespesa = async (e) => {
@@ -139,7 +137,7 @@ export default function Dashboard() {
                 buscarDados();
                 setPaginaDespesas(1);
             }
-        } catch (erro) { console.error("Erro no cadastro de despesa:", erro); } finally { setEnviandoForm(false); }
+        } catch (erro) { console.error(erro); } finally { setEnviandoForm(false); }
     };
 
     const handleCadastrarGastoFixo = async (e) => {
@@ -160,9 +158,139 @@ export default function Dashboard() {
                 buscarDados();
                 setPaginaFixos(1);
             }
-        } catch (erro) { console.error("Erro no cadastro de fixo:", erro); } finally { setEnviandoFixo(false); }
+        } catch (erro) { console.error(erro); } finally { setEnviandoFixo(false); }
     };
 
+    // =========================================================================
+    // FUNÇÕES DE EDIÇÃO E EXCLUSÃO (PUT E DELETE)
+    // =========================================================================
+
+    // --- DESPESAS ---
+    const abrirModalEditarDespesa = (despesa) => {
+        setDespesaEmEdicao({
+            ...despesa,
+            valorReais: ((despesa.valorCentavos || 0) / 100).toFixed(2).replace('.', ','),
+            dataDespesa: despesa.dataDespesa ? despesa.dataDespesa.split('T')[0] : '',
+            idCategoria: despesa.categoria?.id || (categorias.length > 0 ? categorias[0].id : ''),
+            metodoPagamento: despesa.metodoPagamento || 'PIX'
+        });
+        setIsModalEditarDespesaOpen(true);
+    };
+
+    const handleAtualizarDespesa = async (e) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('token');
+            const valorCentavos = Math.round(parseFloat(despesaEmEdicao.valorReais.replace(/\./g, '').replace(',', '.')) * 100);
+            const dataFormatada = new Date(`${despesaEmEdicao.dataDespesa}T00:00:00Z`).toISOString();
+
+            await fetch(`${import.meta.env.VITE_API_URL}/despesas`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: despesaEmEdicao.id,
+                    descricao: despesaEmEdicao.descricao,
+                    valorCentavos,
+                    dataDespesa: dataFormatada,
+                    idCategoria: parseInt(despesaEmEdicao.idCategoria),
+                    metodoPagamento: despesaEmEdicao.metodoPagamento
+                })
+            });
+            setIsModalEditarDespesaOpen(false);
+            buscarDados();
+        } catch (erro) { console.error(erro); }
+    };
+
+    const handleApagarDespesaEdicao = async () => {
+        if (!window.confirm(`Deseja realmente apagar o gasto "${despesaEmEdicao.descricao}"?`)) return;
+        try {
+            const resposta = await fetch(`${import.meta.env.VITE_API_URL}/despesas/${despesaEmEdicao.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+            if (resposta.ok) { setIsModalEditarDespesaOpen(false); buscarDados(); }
+        } catch (erro) { console.error(erro); }
+    };
+
+    // --- GASTOS FIXOS ---
+    const abrirModalEditarFixo = (fixo) => {
+        setFixoEmEdicao({
+            ...fixo,
+            valorReais: ((fixo.valorCentavos || 0) / 100).toFixed(2).replace('.', ','),
+            idCategoria: fixo.categoria?.id || (categorias.length > 0 ? categorias[0].id : ''),
+            metodoPagamento: fixo.metodoPagamento || 'PIX'
+        });
+        setIsModalEditarFixoOpen(true);
+    };
+
+    const handleAtualizarFixo = async (e) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('token');
+            const valorCentavos = Math.round(parseFloat(fixoEmEdicao.valorReais.replace(/\./g, '').replace(',', '.')) * 100);
+
+            await fetch(`${import.meta.env.VITE_API_URL}/gastos-fixos`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: fixoEmEdicao.id,
+                    descricao: fixoEmEdicao.descricao,
+                    valorCentavos,
+                    diaVencimento: parseInt(fixoEmEdicao.diaVencimento),
+                    idCategoria: parseInt(fixoEmEdicao.idCategoria),
+                    metodoPagamento: fixoEmEdicao.metodoPagamento
+                })
+            });
+            setIsModalEditarFixoOpen(false);
+            buscarDados();
+        } catch (erro) { console.error(erro); }
+    };
+
+    const handleApagarFixoEdicao = async () => {
+        if (!window.confirm(`Deseja cancelar o gasto recorrente "${fixoEmEdicao.descricao}"?`)) return;
+        try {
+            const resposta = await fetch(`${import.meta.env.VITE_API_URL}/gastos-fixos/${fixoEmEdicao.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+            if (resposta.ok) { setIsModalEditarFixoOpen(false); buscarDados(); }
+        } catch (erro) { console.error(erro); }
+    };
+
+    // --- RENDAS ---
+    const abrirModalEditarRenda = (renda) => {
+        setRendaEmEdicao({
+            ...renda,
+            valorReais: ((renda.valorCentavos || 0) / 100).toFixed(2).replace('.', ','),
+            dataRecebimento: renda.dataRecebimento ? renda.dataRecebimento.split('T')[0] : ''
+        });
+        setIsModalEditarRendaOpen(true);
+    };
+
+    const handleAtualizarRenda = async (e) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('token');
+            const valorCentavos = Math.round(parseFloat(rendaEmEdicao.valorReais.replace(/\./g, '').replace(',', '.')) * 100);
+
+            await fetch(`${import.meta.env.VITE_API_URL}/rendas`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: rendaEmEdicao.id,
+                    descricao: rendaEmEdicao.descricao,
+                    valorCentavos,
+                    dataRecebimento: rendaEmEdicao.dataRecebimento
+                })
+            });
+            setIsModalEditarRendaOpen(false);
+            buscarDados();
+        } catch (erro) { console.error(erro); }
+    };
+
+    const handleApagarRendaEdicao = async () => {
+        if (!window.confirm(`Deseja apagar a entrada de dinheiro "${rendaEmEdicao.descricao}"?`)) return;
+        try {
+            const resposta = await fetch(`${import.meta.env.VITE_API_URL}/rendas/${rendaEmEdicao.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+            if (resposta.ok) { setIsModalEditarRendaOpen(false); buscarDados(); }
+        } catch (erro) { console.error(erro); }
+    };
+
+    // --- CATEGORIAS ---
     const handleCriarCategoria = async () => {
         const nomeCategoria = window.prompt("Nova categoria:");
         if (!nomeCategoria) return;
@@ -181,22 +309,6 @@ export default function Dashboard() {
         } catch (erro) { console.error("Erro ao criar categoria:", erro); }
     };
 
-    const handleExcluirDespesa = async (id, descricao) => {
-        if (!window.confirm(`Deseja realmente apagar o gasto "${descricao}"?`)) return;
-        try {
-            const resposta = await fetch(`${import.meta.env.VITE_API_URL}/despesas/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
-            if (resposta.ok) buscarDados();
-        } catch (erro) { console.error("Erro ao excluir despesa:", erro); }
-    };
-
-    const handleExcluirGastoFixo = async (id, descricao) => {
-        if (!window.confirm(`Deseja cancelar o gasto recorrente "${descricao}"?`)) return;
-        try {
-            const resposta = await fetch(`${import.meta.env.VITE_API_URL}/gastos-fixos/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
-            if (resposta.ok) buscarDados();
-        } catch (erro) { console.error("Erro ao excluir fixo:", erro); }
-    };
-
     const handleExcluirCategoria = async (id, nome) => {
         if (!window.confirm(`Tem certeza que deseja apagar a categoria "${nome}"?`)) return;
         try {
@@ -206,6 +318,9 @@ export default function Dashboard() {
         } catch (erro) { console.error("Erro ao excluir categoria:", erro); }
     };
 
+    // =========================================================================
+    // FORMATAÇÃO E CÁLCULOS
+    // =========================================================================
     const formatarMoeda = (valor) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
     const formatarData = (dataIso) => { if (!dataIso) return '--/--/----'; return new Date(dataIso).toLocaleDateString('pt-BR', {timeZone: 'UTC'}); };
 
@@ -214,7 +329,6 @@ export default function Dashboard() {
     const saldoConsolidado = totalRendas - totalSaidas;
 
     const corSaldoCard = saldoConsolidado >= 0 ? "from-emerald-600 to-teal-900 shadow-emerald-900/20" : "from-rose-600 to-red-900 shadow-rose-900/20";
-
     const totalTransacoes = despesas.length + gastosFixos.length;
 
     const resumoCategorias = categorias.map(cat => {
@@ -229,10 +343,19 @@ export default function Dashboard() {
     const despesasAtuais = despesasOrdenadas.slice((paginaDespesas - 1) * itensPorPagina, paginaDespesas * itensPorPagina);
     const fixosAtuais = fixosOrdenados.slice((paginaFixos - 1) * itensPorPagina, paginaFixos * itensPorPagina);
 
+    // =========================================================================
+    // CSS CLASSES
+    // =========================================================================
     const cardClass = "bg-[#131826] border border-gray-800/60 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-7 shadow-2xl relative";
     const sidebarButton = "w-full h-[60px] px-6 bg-[#1a2133] hover:bg-sky-500 hover:text-white rounded-2xl transition-all font-bold text-sm text-gray-300 text-left flex items-center justify-between shrink-0 group";
     const inputClass = "w-full px-4 py-3 md:px-5 md:py-3.5 bg-[#0b0f19] text-white font-bold border border-gray-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none placeholder:text-gray-600";
     const labelClass = "block mb-2 text-xs font-bold text-gray-400 tracking-wide uppercase";
+
+    const iconeLapis = (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+        </svg>
+    );
 
     return (
         <div className="flex h-screen bg-[#0b0f19] text-white font-sans overflow-hidden">
@@ -359,6 +482,8 @@ export default function Dashboard() {
 
                     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
                         <div className="xl:col-span-2 space-y-6 md:space-y-8">
+
+                            {/* TABELA DE DESPESAS AVULSAS */}
                             <div className={cardClass}>
                                 <div className="flex justify-between items-center mb-4 md:mb-6">
                                     <h2 className="text-xs md:text-sm font-black text-white uppercase tracking-widest">Extrato Avulso Recente</h2>
@@ -377,7 +502,8 @@ export default function Dashboard() {
                                                 <div className="text-right flex flex-col items-end">
                                                     <p className="font-bold text-white text-sm md:text-base">- {formatarMoeda((despesa.valorCentavos || 0) / 100)}</p>
                                                 </div>
-                                                <button onClick={() => handleExcluirDespesa(despesa.id, despesa.descricao || 'Sem nome')} className="text-gray-600 hover:text-red-500 md:opacity-0 group-hover:opacity-100 transition-all p-2" title="Apagar Despesa">🗑</button>
+                                                {/* BOTÃO DO LÁPIS AQUI */}
+                                                <button onClick={() => abrirModalEditarDespesa(despesa)} className="text-gray-600 hover:text-sky-500 md:opacity-0 group-hover:opacity-100 transition-all p-2" title="Editar Despesa">{iconeLapis}</button>
                                             </div>
                                         </div>
                                     ))}
@@ -389,6 +515,7 @@ export default function Dashboard() {
                                 </div>
                             </div>
 
+                            {/* TABELA DE GASTOS FIXOS */}
                             <div className={cardClass}>
                                 <h2 className="text-xs md:text-sm font-black text-white uppercase tracking-widest mb-4 md:mb-6">Extrato Fixo Mensal</h2>
                                 <div className="space-y-1">
@@ -405,7 +532,8 @@ export default function Dashboard() {
                                                 <div className="text-right flex flex-col items-end">
                                                     <p className="font-bold text-white text-sm md:text-base">- {formatarMoeda((fixo.valorCentavos / 100) || fixo.valor || 0)}</p>
                                                 </div>
-                                                <button onClick={() => handleExcluirGastoFixo(fixo.id, fixo.descricao || fixo.nome)} className="text-gray-600 hover:text-red-500 md:opacity-0 group-hover:opacity-100 transition-all p-2" title="Apagar Gasto Fixo">🗑</button>
+                                                {/* BOTÃO DO LÁPIS AQUI */}
+                                                <button onClick={() => abrirModalEditarFixo(fixo)} className="text-gray-600 hover:text-indigo-500 md:opacity-0 group-hover:opacity-100 transition-all p-2" title="Editar Gasto Fixo">{iconeLapis}</button>
                                             </div>
                                         </div>
                                     ))}
@@ -449,7 +577,7 @@ export default function Dashboard() {
                                 )}
                             </div>
 
-                            {/* --- HISTÓRICO DE RENDAS --- */}
+                            {/* TABELA DE HISTÓRICO DE RENDAS */}
                             <div className={cardClass}>
                                 <h2 className="text-xs md:text-sm font-black text-white uppercase tracking-widest mb-4 md:mb-6">Histórico de Entradas</h2>
                                 <div className="space-y-1">
@@ -464,7 +592,8 @@ export default function Dashboard() {
                                                 </div>
                                                 <div className="flex items-center gap-2 md:gap-4 shrink-0">
                                                     <p className="font-bold text-emerald-400 text-sm md:text-base">+ {formatarMoeda((renda.valorCentavos || 0) / 100)}</p>
-                                                    <button onClick={() => handleExcluirRenda(renda.id, renda.descricao || 'Entrada')} className="text-gray-600 hover:text-red-500 md:opacity-0 group-hover:opacity-100 transition-all p-2" title="Apagar Renda">🗑</button>
+                                                    {/* BOTÃO DO LÁPIS AQUI */}
+                                                    <button onClick={() => abrirModalEditarRenda(renda)} className="text-gray-600 hover:text-emerald-500 md:opacity-0 group-hover:opacity-100 transition-all p-2" title="Editar Renda">{iconeLapis}</button>
                                                 </div>
                                             </div>
                                         ))
@@ -477,7 +606,10 @@ export default function Dashboard() {
                 </div>
             </main>
 
-            {/* MODAIS */}
+            {/* ======================================================================= */}
+            {/* MODAIS DE CADASTRO */}
+            {/* ======================================================================= */}
+
             {isModalRendaOpen && (
                 <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-3 sm:p-4 z-[60] transition-opacity backdrop-blur-sm" onClick={() => setIsModalRendaOpen(false)}>
                     <div className={`${cardClass} w-full max-w-xl border-emerald-500/30 shadow-emerald-900/20`} onClick={(e) => e.stopPropagation()}>
@@ -535,76 +667,30 @@ export default function Dashboard() {
 
                             <div>
                                 <label className={labelClass}>Descrição</label>
-                                <input
-                                    type="text"
-                                    value={novoGastoFixo.descricao}
-                                    onChange={(e) => setNovoGastoFixo({...novoGastoFixo, descricao: e.target.value})}
-                                    className={inputClass}
-                                    placeholder="Ex: Aluguel"
-                                    required
-                                />
+                                <input type="text" value={novoGastoFixo.descricao} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, descricao: e.target.value})} className={inputClass} placeholder="Ex: Aluguel" required />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className={labelClass}>Valor</label>
-                                    <input
-                                        type="text"
-                                        value={novoGastoFixo.valorReais}
-                                        onChange={(e) => setNovoGastoFixo({...novoGastoFixo, valorReais: e.target.value})}
-                                        className={inputClass}
-                                        placeholder="Ex: 1500,00"
-                                        required
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className={labelClass}>Dia Venc.</label>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max="31"
-                                        value={novoGastoFixo.diaVencimento}
-                                        onChange={(e) => setNovoGastoFixo({...novoGastoFixo, diaVencimento: e.target.value})}
-                                        className={inputClass}
-                                        placeholder="Ex: 10"
-                                        required
-                                    />
-                                </div>
+                                <div><label className={labelClass}>Valor</label><input type="text" value={novoGastoFixo.valorReais} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, valorReais: e.target.value})} className={inputClass} placeholder="Ex: 1500,00" required /></div>
+                                <div><label className={labelClass}>Dia Venc.</label><input type="number" min="1" max="31" value={novoGastoFixo.diaVencimento} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, diaVencimento: e.target.value})} className={inputClass} placeholder="Ex: 10" required /></div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className={labelClass}>Categoria</label>
                                     <div className="flex gap-2">
-                                        <select
-                                            value={novoGastoFixo.idCategoria}
-                                            onChange={(e) => setNovoGastoFixo({...novoGastoFixo, idCategoria: e.target.value})}
-                                            className={`${inputClass} appearance-none flex-grow`}
-                                        >
+                                        <select value={novoGastoFixo.idCategoria} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, idCategoria: e.target.value})} className={`${inputClass} appearance-none flex-grow`}>
                                             <option value="" disabled hidden>Selecione...</option>
-                                            <optgroup label="SISTEMA" className="text-sky-400">
-                                                {categorias.filter(c => c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}
-                                            </optgroup>
-                                            <optgroup label="PESSOAL" className="text-fuchsia-400">
-                                                {categorias.filter(c => !c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}
-                                            </optgroup>
+                                            <optgroup label="SISTEMA" className="text-sky-400">{categorias.filter(c => c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}</optgroup>
+                                            <optgroup label="PESSOAL" className="text-fuchsia-400">{categorias.filter(c => !c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}</optgroup>
                                         </select>
                                         <button type="button" onClick={handleCriarCategoria} className="bg-[#1a2133] border border-gray-800 text-white font-bold rounded-xl px-4 hover:bg-sky-500 shrink-0">+</button>
                                     </div>
                                 </div>
-
                                 <div>
                                     <label className={labelClass}>Pagamento</label>
-                                    <select
-                                        value={novoGastoFixo.metodoPagamento}
-                                        onChange={(e) => setNovoGastoFixo({...novoGastoFixo, metodoPagamento: e.target.value})}
-                                        className={`${inputClass} appearance-none`}
-                                    >
-                                        <option value="PIX">PIX</option>
-                                        <option value="DEBITO">DÉBITO</option>
-                                        <option value="CREDITO">CRÉDITO</option>
-                                        <option value="DINHEIRO">DINHEIRO</option>
+                                    <select value={novoGastoFixo.metodoPagamento} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, metodoPagamento: e.target.value})} className={`${inputClass} appearance-none`}>
+                                        <option value="PIX">PIX</option><option value="DEBITO">DÉBITO</option><option value="CREDITO">CRÉDITO</option><option value="DINHEIRO">DINHEIRO</option>
                                     </select>
                                 </div>
                             </div>
@@ -639,6 +725,100 @@ export default function Dashboard() {
                             <button onClick={handleCriarCategoria} className="flex-1 px-3 py-3 font-black text-sky-400 bg-[#1a2133] border border-sky-500/20 rounded-xl hover:bg-sky-500 hover:text-white uppercase text-[10px] shadow-lg">+ NOVA</button>
                             <button onClick={() => setIsModalCategoriasOpen(false)} className="flex-1 px-3 py-3 font-black text-white bg-gray-800 rounded-xl hover:bg-gray-700 uppercase text-[10px]">FECHAR</button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ======================================================================= */}
+            {/* MODAIS DE EDIÇÃO */}
+            {/* ======================================================================= */}
+
+            {isModalEditarDespesaOpen && despesaEmEdicao && (
+                <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-3 sm:p-4 z-[70] transition-opacity backdrop-blur-sm" onClick={() => setIsModalEditarDespesaOpen(false)}>
+                    <div className={`${cardClass} w-full max-w-xl max-h-[90vh] overflow-y-auto custom-scrollbar`} onClick={(e) => e.stopPropagation()}>
+                        <div className="text-center mb-6"><h2 className="text-xl font-black text-white uppercase tracking-wider">Editar Gasto</h2></div>
+                        <form onSubmit={handleAtualizarDespesa} className="space-y-4">
+                            <div><label className={labelClass}>Descrição</label><input type="text" value={despesaEmEdicao.descricao} onChange={(e) => setDespesaEmEdicao({...despesaEmEdicao, descricao: e.target.value})} className={inputClass} required /></div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div><label className={labelClass}>Valor (R$)</label><input type="text" value={despesaEmEdicao.valorReais} onChange={(e) => setDespesaEmEdicao({...despesaEmEdicao, valorReais: e.target.value})} className={inputClass} required /></div>
+                                <div><label className={labelClass}>Data</label><input type="date" value={despesaEmEdicao.dataDespesa} onChange={(e) => setDespesaEmEdicao({...despesaEmEdicao, dataDespesa: e.target.value})} className={inputClass} required /></div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className={labelClass}>Categoria</label>
+                                    <select value={despesaEmEdicao.idCategoria} onChange={(e) => setDespesaEmEdicao({...despesaEmEdicao, idCategoria: e.target.value})} className={`${inputClass} appearance-none`}>
+                                        <optgroup label="SISTEMA" className="text-sky-400">{categorias.filter(c => c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}</optgroup>
+                                        <optgroup label="PESSOAL" className="text-fuchsia-400">{categorias.filter(c => !c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}</optgroup>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Pagamento</label>
+                                    <select value={despesaEmEdicao.metodoPagamento} onChange={(e) => setDespesaEmEdicao({...despesaEmEdicao, metodoPagamento: e.target.value})} className={`${inputClass} appearance-none`}>
+                                        <option value="PIX">PIX</option><option value="DEBITO">DÉBITO</option><option value="CREDITO">CRÉDITO</option><option value="DINHEIRO">DINHEIRO</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-3 mt-6 pt-4 border-t border-gray-800/50">
+                                <button type="button" onClick={() => setIsModalEditarDespesaOpen(false)} className="w-full py-3 font-bold text-gray-400 border border-gray-800 rounded-xl hover:bg-gray-800 text-[10px] uppercase">Cancelar</button>
+                                <button type="button" onClick={handleApagarDespesaEdicao} className="w-full py-3 font-black text-red-500 bg-red-500/10 border border-red-500/20 rounded-xl hover:bg-red-500 hover:text-white text-[10px] uppercase">Apagar</button>
+                                <button type="submit" className="w-full py-3 font-black text-white bg-sky-500 rounded-xl hover:bg-sky-400 text-[10px] uppercase">Salvar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {isModalEditarFixoOpen && fixoEmEdicao && (
+                <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-3 sm:p-4 z-[70] transition-opacity backdrop-blur-sm" onClick={() => setIsModalEditarFixoOpen(false)}>
+                    <div className={`${cardClass} w-full max-w-xl max-h-[90vh] overflow-y-auto custom-scrollbar`} onClick={(e) => e.stopPropagation()}>
+                        <div className="text-center mb-6"><h2 className="text-xl font-black text-white uppercase tracking-wider">Editar Fixo</h2></div>
+                        <form onSubmit={handleAtualizarFixo} className="space-y-4">
+                            <div><label className={labelClass}>Descrição</label><input type="text" value={fixoEmEdicao.descricao} onChange={(e) => setFixoEmEdicao({...fixoEmEdicao, descricao: e.target.value})} className={inputClass} required /></div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div><label className={labelClass}>Valor (R$)</label><input type="text" value={fixoEmEdicao.valorReais} onChange={(e) => setFixoEmEdicao({...fixoEmEdicao, valorReais: e.target.value})} className={inputClass} required /></div>
+                                <div><label className={labelClass}>Dia Venc.</label><input type="number" min="1" max="31" value={fixoEmEdicao.diaVencimento} onChange={(e) => setFixoEmEdicao({...fixoEmEdicao, diaVencimento: e.target.value})} className={inputClass} required /></div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className={labelClass}>Categoria</label>
+                                    <select value={fixoEmEdicao.idCategoria} onChange={(e) => setFixoEmEdicao({...fixoEmEdicao, idCategoria: e.target.value})} className={`${inputClass} appearance-none`}>
+                                        <optgroup label="SISTEMA" className="text-sky-400">{categorias.filter(c => c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}</optgroup>
+                                        <optgroup label="PESSOAL" className="text-fuchsia-400">{categorias.filter(c => !c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}</optgroup>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Pagamento</label>
+                                    <select value={fixoEmEdicao.metodoPagamento} onChange={(e) => setFixoEmEdicao({...fixoEmEdicao, metodoPagamento: e.target.value})} className={`${inputClass} appearance-none`}>
+                                        <option value="PIX">PIX</option><option value="DEBITO">DÉBITO</option><option value="CREDITO">CRÉDITO</option><option value="DINHEIRO">DINHEIRO</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-3 mt-6 pt-4 border-t border-gray-800/50">
+                                <button type="button" onClick={() => setIsModalEditarFixoOpen(false)} className="w-full py-3 font-bold text-gray-400 border border-gray-800 rounded-xl hover:bg-gray-800 text-[10px] uppercase">Cancelar</button>
+                                <button type="button" onClick={handleApagarFixoEdicao} className="w-full py-3 font-black text-red-500 bg-red-500/10 border border-red-500/20 rounded-xl hover:bg-red-500 hover:text-white text-[10px] uppercase">Apagar</button>
+                                <button type="submit" className="w-full py-3 font-black text-white bg-indigo-500 rounded-xl hover:bg-indigo-400 text-[10px] uppercase">Salvar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {isModalEditarRendaOpen && rendaEmEdicao && (
+                <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-3 sm:p-4 z-[70] transition-opacity backdrop-blur-sm" onClick={() => setIsModalEditarRendaOpen(false)}>
+                    <div className={`${cardClass} w-full max-w-xl border-emerald-500/30 shadow-emerald-900/20`} onClick={(e) => e.stopPropagation()}>
+                        <div className="text-center mb-6"><h2 className="text-xl font-black text-emerald-400 uppercase tracking-wider">Editar Renda</h2></div>
+                        <form onSubmit={handleAtualizarRenda} className="space-y-4">
+                            <div><label className={labelClass}>Descrição</label><input type="text" value={rendaEmEdicao.descricao} onChange={(e) => setRendaEmEdicao({...rendaEmEdicao, descricao: e.target.value})} className={inputClass} required /></div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div><label className={labelClass}>Valor (R$)</label><input type="text" value={rendaEmEdicao.valorReais} onChange={(e) => setRendaEmEdicao({...rendaEmEdicao, valorReais: e.target.value})} className={inputClass} required /></div>
+                                <div><label className={labelClass}>Data</label><input type="date" value={rendaEmEdicao.dataRecebimento} onChange={(e) => setRendaEmEdicao({...rendaEmEdicao, dataRecebimento: e.target.value})} className={inputClass} required /></div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-3 mt-6 pt-4 border-t border-gray-800/50">
+                                <button type="button" onClick={() => setIsModalEditarRendaOpen(false)} className="w-full py-3 font-bold text-gray-400 border border-gray-800 rounded-xl hover:bg-gray-800 text-[10px] uppercase">Cancelar</button>
+                                <button type="button" onClick={handleApagarRendaEdicao} className="w-full py-3 font-black text-red-500 bg-red-500/10 border border-red-500/20 rounded-xl hover:bg-red-500 hover:text-white text-[10px] uppercase">Apagar</button>
+                                <button type="submit" className="w-full py-3 font-black text-white bg-emerald-600 rounded-xl hover:bg-emerald-500 text-[10px] uppercase">Salvar</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
