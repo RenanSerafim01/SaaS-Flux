@@ -1,5 +1,6 @@
 package br.com.fiap.controle_gastos.controller;
 
+import br.com.fiap.controle_gastos.dto.DadosAtualizacaoDespesa;
 import br.com.fiap.controle_gastos.dto.DadosCadastroDespesa;
 import br.com.fiap.controle_gastos.dto.DadosDetalhamentoDespesa;
 import br.com.fiap.controle_gastos.model.Categoria;
@@ -78,20 +79,22 @@ public class DespesaController {
         return ResponseEntity.ok(lista);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping
     public ResponseEntity<DadosDetalhamentoDespesa> atualizarDespesa(
-            @PathVariable Long id,
-            @Valid @RequestBody DadosCadastroDespesa dados,
+            @Valid @RequestBody DadosAtualizacaoDespesa dados,
             @AuthenticationPrincipal Usuario usuarioLogado) {
 
-        return despesaRepository.findByIdAndUsuarioId(id, usuarioLogado.getId())
+        return despesaRepository.findByIdAndUsuarioId(dados.id(), usuarioLogado.getId())
                 .map(despesaExistente -> {
-                    Categoria categoria = categoriaRepository.findById(dados.idCategoria())
-                            .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada"));
+                    despesaExistente.atualizarInformacoes(dados);
 
-                    despesaExistente.atualizarInformacoes(dados, categoria);
+                    if (dados.idCategoria() != null) {
+                        Categoria categoria = categoriaRepository.findById(dados.idCategoria())
+                                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada"));
+                        despesaExistente.setCategoria(categoria); // Garanta que exista um 'setCategoria' na classe Despesa
+                    }
+
                     despesaRepository.save(despesaExistente);
-
                     return ResponseEntity.ok(new DadosDetalhamentoDespesa(despesaExistente));
                 })
                 .orElse(ResponseEntity.notFound().build());

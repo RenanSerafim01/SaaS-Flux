@@ -1,5 +1,6 @@
 package br.com.fiap.controle_gastos.model;
 
+import br.com.fiap.controle_gastos.dto.DadosAtualizacaoRenda;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -38,5 +39,11 @@ public class Renda {
         this.valorCentavos = valorCentavos;
         this.dataRecebimento = dataRecebimento;
         this.usuario = usuario;
+    }
+
+    public void atualizarInformacoes(DadosAtualizacaoRenda dados) {
+        if (dados.descricao() != null) { this.descricao = dados.descricao(); }
+        if (dados.valorCentavos() != null) { this.valorCentavos = dados.valorCentavos(); }
+        if (dados.dataRecebimento() != null) { this.dataRecebimento = dados.dataRecebimento(); }
     }
 }

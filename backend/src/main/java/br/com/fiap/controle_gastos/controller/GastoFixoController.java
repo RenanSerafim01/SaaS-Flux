@@ -1,5 +1,6 @@
 package br.com.fiap.controle_gastos.controller;
 
+import br.com.fiap.controle_gastos.dto.DadosAtualizacaoGastoFixo;
 import br.com.fiap.controle_gastos.dto.DadosCadastroGastoFixo;
 import br.com.fiap.controle_gastos.dto.DadosDetalhamentoGastoFixo;
 import br.com.fiap.controle_gastos.model.Categoria;
@@ -38,7 +39,6 @@ public class GastoFixoController {
         Categoria categoria = categoriaRepository.findById(dados.idCategoria())
                 .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada"));
 
-        // Mandando o usuarioLogado para dentro do construtor
         GastoFixo novoGasto = new GastoFixo(dados, categoria, usuarioLogado);
         gastoFixoRepository.save(novoGasto);
 
@@ -51,11 +51,31 @@ public class GastoFixoController {
             @PageableDefault(size = 10, sort = {"diaVencimento"}) Pageable paginacao,
             @AuthenticationPrincipal Usuario usuarioLogado) {
 
-        // Trazendo só os gastos do usuário logado
         var page = gastoFixoRepository.findAllByUsuarioId(usuarioLogado.getId(), paginacao)
                 .map(DadosDetalhamentoGastoFixo::new);
 
         return ResponseEntity.ok(page);
+    }
+
+    @PutMapping
+    public ResponseEntity<DadosDetalhamentoGastoFixo> atualizarGastoFixo(
+            @Valid @RequestBody DadosAtualizacaoGastoFixo dados,
+            @AuthenticationPrincipal Usuario usuarioLogado) {
+
+        return gastoFixoRepository.findByIdAndUsuarioId(dados.id(), usuarioLogado.getId())
+                .map(gastoExistente -> {
+                    gastoExistente.atualizarInformacoes(dados);
+
+                    if (dados.idCategoria() != null) {
+                        Categoria categoria = categoriaRepository.findById(dados.idCategoria())
+                                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada"));
+                        gastoExistente.setCategoria(categoria);
+                    }
+
+                    gastoFixoRepository.save(gastoExistente);
+                    return ResponseEntity.ok(new DadosDetalhamentoGastoFixo(gastoExistente));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")

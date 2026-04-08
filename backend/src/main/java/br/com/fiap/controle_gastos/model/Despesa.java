@@ -1,5 +1,6 @@
 package br.com.fiap.controle_gastos.model;
 
+import br.com.fiap.controle_gastos.dto.DadosAtualizacaoDespesa;
 import br.com.fiap.controle_gastos.dto.DadosCadastroDespesa;
 import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
@@ -60,5 +61,20 @@ public class Despesa {
         this.dataDespesa = dados.dataDespesa();
         this.metodoPagamento = dados.metodoPagamento();
         this.categoria = categoria;
+    }
+
+    public void atualizarInformacoes(DadosAtualizacaoDespesa dados) {
+        if (dados.descricao() != null) {
+            this.descricao = dados.descricao();
+        }
+        if (dados.valorCentavos() != null) {
+            this.valorCentavos = dados.valorCentavos();
+        }
+        if (dados.dataDespesa() != null) {
+            this.dataDespesa = dados.dataDespesa();
+        }
+        if (dados.metodoPagamento() != null) {
+            this.metodoPagamento = dados.metodoPagamento();
+        }
     }
 }

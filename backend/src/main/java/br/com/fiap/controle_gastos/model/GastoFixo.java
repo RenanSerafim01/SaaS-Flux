@@ -1,5 +1,6 @@
 package br.com.fiap.controle_gastos.model;
 
+import br.com.fiap.controle_gastos.dto.DadosAtualizacaoGastoFixo;
 import br.com.fiap.controle_gastos.dto.DadosCadastroGastoFixo;
 import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
@@ -50,5 +51,12 @@ public class GastoFixo {
         this.metodoPagamento = TipoPagamento.valueOf(dados.metodoPagamento().toUpperCase());
         this.categoria = categoria;
         this.usuario = usuario;
+    }
+
+    public void atualizarInformacoes(DadosAtualizacaoGastoFixo dados) {
+        if (dados.descricao() != null) { this.descricao = dados.descricao(); }
+        if (dados.valorCentavos() != null) { this.valorCentavos = dados.valorCentavos(); }
+        if (dados.diaVencimento() != null) { this.diaVencimento = dados.diaVencimento(); }
+        if (dados.metodoPagamento() != null) { this.metodoPagamento = dados.metodoPagamento(); }
     }
 }
