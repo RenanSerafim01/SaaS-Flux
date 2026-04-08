@@ -487,7 +487,7 @@ export default function Dashboard() {
                         <form onSubmit={handleCadastrarRenda} className="space-y-4 md:space-y-5">
                             <div>
                                 <label className={labelClass}>Origem da Renda</label>
-                                <input type="text" value={novaRenda.descricao} onChange={(e) => setNovaRenda({...novaRenda, descricao: e.target.value})} className={inputClass} placeholder="Ex: Salário Altio, Freelance..." required />
+                                <input type="text" value={novaRenda.descricao} onChange={(e) => setNovaRenda({...novaRenda, descricao: e.target.value})} className={inputClass} placeholder="Ex: Salário, Freelance..." required />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div><label className={labelClass}>Valor (R$)</label><input type="text" value={novaRenda.valorReais} onChange={(e) => setNovaRenda({...novaRenda, valorReais: e.target.value})} className={inputClass} placeholder="5000,00" required /></div>
