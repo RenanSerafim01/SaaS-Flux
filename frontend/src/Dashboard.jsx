@@ -528,21 +528,90 @@ export default function Dashboard() {
             {isModalFixoOpen && (
                 <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-3 sm:p-4 z-[60] transition-opacity backdrop-blur-sm" onClick={() => setIsModalFixoOpen(false)}>
                     <div className={`${cardClass} w-full max-w-xl max-h-[90vh] overflow-y-auto custom-scrollbar`} onClick={(e) => e.stopPropagation()}>
-                        <div className="text-center mb-6"><h2 className="text-xl font-black text-white uppercase tracking-wider">Gasto Fixo</h2></div>
+                        <div className="text-center mb-6">
+                            <h2 className="text-xl font-black text-white uppercase tracking-wider">Gasto Fixo</h2>
+                        </div>
                         <form onSubmit={handleCadastrarGastoFixo} className="space-y-4">
-                            <div><label className={labelClass}>Descrição</label><input type="text" value={novoGastoFixo.descricao} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, descricao: e.target.value})} className={inputClass} required /></div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div><label className={labelClass}>Valor</label><input type="text" value={novoGastoFixo.valorReais} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, valorReais: e.target.value})} className={inputClass} required /></div>
-                                <div><label className={labelClass}>Dia Venc.</label><input type="number" min="1" max="31" value={novoGastoFixo.diaVencimento} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, diaVencimento: e.target.value})} className={inputClass} required /></div>
+
+                            <div>
+                                <label className={labelClass}>Descrição</label>
+                                <input
+                                    type="text"
+                                    value={novoGastoFixo.descricao}
+                                    onChange={(e) => setNovoGastoFixo({...novoGastoFixo, descricao: e.target.value})}
+                                    className={inputClass}
+                                    placeholder="Ex: Aluguel, Internet, Academia..."
+                                    required
+                                />
                             </div>
+
                             <div className="grid grid-cols-2 gap-4">
-                                <div><label className={labelClass}>Categoria</label><div className="flex gap-2"><select value={novoGastoFixo.idCategoria} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, idCategoria: e.target.value})} className={`${inputClass} appearance-none flex-grow`}><optgroup label="SISTEMA" className="text-sky-400">{categorias.filter(c => c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}</optgroup><optgroup label="PESSOAL" className="text-fuchsia-400">{categorias.filter(c => !c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}</optgroup></select><button type="button" onClick={handleCriarCategoria} className="bg-[#1a2133] border border-gray-800 text-white font-bold rounded-xl px-4 hover:bg-sky-500 shrink-0">+</button></div></div>
-                                <div><label className={labelClass}>Pagamento</label><select value={novoGastoFixo.metodoPagamento} onChange={(e) => setNovoGastoFixo({...novoGastoFixo, metodoPagamento: e.target.value})} className={`${inputClass} appearance-none`}><option value="PIX">PIX</option><option value="DEBITO">DÉBITO</option></select></div>
+                                <div>
+                                    <label className={labelClass}>Valor</label>
+                                    <input
+                                        type="text"
+                                        value={novoGastoFixo.valorReais}
+                                        onChange={(e) => setNovoGastoFixo({...novoGastoFixo, valorReais: e.target.value})}
+                                        className={inputClass}
+                                        placeholder="Ex: 1500,00"
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className={labelClass}>Dia Venc.</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="31"
+                                        value={novoGastoFixo.diaVencimento}
+                                        onChange={(e) => setNovoGastoFixo({...novoGastoFixo, diaVencimento: e.target.value})}
+                                        className={inputClass}
+                                        placeholder="Ex: 10"
+                                        required
+                                    />
+                                </div>
                             </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className={labelClass}>Categoria</label>
+                                    <div className="flex gap-2">
+                                        <select
+                                            value={novoGastoFixo.idCategoria}
+                                            onChange={(e) => setNovoGastoFixo({...novoGastoFixo, idCategoria: e.target.value})}
+                                            className={`${inputClass} appearance-none flex-grow`}
+                                        >
+                                            <option value="" disabled hidden>Selecione...</option>
+                                            <optgroup label="SISTEMA" className="text-sky-400">
+                                                {categorias.filter(c => c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}
+                                            </optgroup>
+                                            <optgroup label="PESSOAL" className="text-fuchsia-400">
+                                                {categorias.filter(c => !c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}
+                                            </optgroup>
+                                        </select>
+                                        <button type="button" onClick={handleCriarCategoria} className="bg-[#1a2133] border border-gray-800 text-white font-bold rounded-xl px-4 hover:bg-sky-500 shrink-0">+</button>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className={labelClass}>Pagamento</label>
+                                    <select
+                                        value={novoGastoFixo.metodoPagamento}
+                                        onChange={(e) => setNovoGastoFixo({...novoGastoFixo, metodoPagamento: e.target.value})}
+                                        className={`${inputClass} appearance-none`}
+                                    >
+                                        <option value="PIX">PIX</option>
+                                        <option value="DEBITO">DÉBITO</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <div className="grid grid-cols-2 gap-3 mt-6 pt-4 border-t border-gray-800/50">
                                 <button type="button" onClick={() => setIsModalFixoOpen(false)} className="w-full py-3 font-bold text-gray-400 border border-gray-800 rounded-full hover:bg-gray-800 text-[10px] uppercase">Cancelar</button>
                                 <button type="submit" disabled={enviandoFixo} className="w-full py-3 font-black text-white bg-sky-500 rounded-full hover:bg-sky-400 text-[10px] uppercase">Salvar</button>
                             </div>
+
                         </form>
                     </div>
                 </div>
