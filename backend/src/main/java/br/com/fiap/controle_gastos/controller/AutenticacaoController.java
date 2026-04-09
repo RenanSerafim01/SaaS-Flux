@@ -63,7 +63,6 @@ public class AutenticacaoController {
 
         String senhaCriptografada = new BCryptPasswordEncoder().encode(dados.senha());
 
-        // CORREÇÃO AQUI: Passando os três parâmetros exigidos (nome, email, senha)
         Usuario novoUsuario = new Usuario(dados.nome(), dados.login(), senhaCriptografada);
 
         this.repository.save(novoUsuario);

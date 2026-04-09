@@ -26,6 +26,7 @@ function LandingPage() {
     const [senha, setSenha] = useState('');
     const [confirmaSenha, setConfirmaSenha] = useState('');
     const [mensagem, setMensagem] = useState({ texto: '', tipo: '' });
+    const [enviando, setEnviando] = useState(false);
 
     const fecharModal = () => {
         setIsLoginModalOpen(false);
@@ -41,6 +42,8 @@ function LandingPage() {
     const handleLogin = async (e) => {
         e.preventDefault();
         setMensagem({ texto: '', tipo: '' });
+
+        setEnviando(true);
 
         try {
             const resposta = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
@@ -59,9 +62,12 @@ function LandingPage() {
             } else {
                 setMensagem({ texto: 'Usuário ou senha incorretos.', tipo: 'erro' });
             }
+
         } catch (erro) {
             console.error(erro);
             setMensagem({ texto: 'Servidor indisponível no momento.', tipo: 'erro' });
+        }finally {
+            setEnviando(false);
         }
     };
 
@@ -73,6 +79,8 @@ function LandingPage() {
             setMensagem({ texto: 'As senhas não coincidem.', tipo: 'erro' });
             return;
         }
+
+        setEnviando(true);
 
         try {
             const resposta = await fetch(`${import.meta.env.VITE_API_URL}/cadastro`, {
@@ -98,6 +106,8 @@ function LandingPage() {
         } catch (erro) {
             console.error(erro);
             setMensagem({ texto: 'Servidor indisponível no momento.', tipo: 'erro' });
+        }finally {
+            setEnviando(false);
         }
     };
 
@@ -110,6 +120,8 @@ function LandingPage() {
             return;
         }
 
+        setEnviando(true);
+
         setMensagem({ texto: 'Buscando conta e gerando link...', tipo: 'sucesso' });
 
         setTimeout(() => {
@@ -118,6 +130,7 @@ function LandingPage() {
             setTimeout(() => {
                 setIsRecuperarMode(false);
                 setMensagem({ texto: '', tipo: '' });
+                setEnviando(false);
             }, 4000);
         }, 1500);
     };
@@ -278,8 +291,15 @@ function LandingPage() {
                             )}
 
                             <div className="pt-2">
-                                <button type="submit" className="w-full bg-sky-500 hover:bg-sky-400 text-white font-black py-3 md:py-4 rounded-xl transition-all uppercase tracking-widest text-[10px] md:text-sm shadow-lg shadow-sky-500/20">
-                                    {isRecuperarMode ? 'Enviar Link de Recuperação' : (isLoginMode ? 'Acessar Conta' : 'Cadastrar e Entrar')}
+                                <button
+                                    type="submit"
+                                    disabled={enviando}
+                                    className={`w-full bg-sky-500 hover:bg-sky-400 text-white font-black py-3 md:py-4 rounded-xl transition-all uppercase tracking-widest text-[10px] md:text-sm shadow-lg shadow-sky-500/20 ${enviando ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                    {enviando
+                                        ? 'Aguarde...'
+                                        : (isRecuperarMode ? 'Enviar Link de Recuperação' : (isLoginMode ? 'Acessar Conta' : 'Cadastrar Conta'))
+                                    }
                                 </button>
                             </div>
                         </form>
