@@ -210,15 +210,26 @@ export default function Dashboard() {
             });
             setIsModalEditarDespesaOpen(false);
             buscarDados();
-        } catch (erro) { console.error(erro); }
+            mostrarNotificacao('Gasto atualizado com sucesso!', 'sucesso');
+        } catch (erro) {
+            console.error(erro);
+            mostrarNotificacao('Erro ao atualizar gasto.', 'erro');
+        }
     };
 
     const handleApagarDespesaEdicao = async () => {
         if (!window.confirm(`Deseja realmente apagar o gasto "${despesaEmEdicao.descricao}"?`)) return;
         try {
             const resposta = await fetch(`${import.meta.env.VITE_API_URL}/despesas/${despesaEmEdicao.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
-            if (resposta.ok) { setIsModalEditarDespesaOpen(false); buscarDados(); }
-        } catch (erro) { console.error(erro); }
+            if (resposta.ok) {
+                setIsModalEditarDespesaOpen(false);
+                buscarDados();
+                mostrarNotificacao('Gasto apagado com sucesso!', 'sucesso');
+            }
+        } catch (erro) {
+            console.error(erro);
+            mostrarNotificacao('Erro ao apagar gasto.', 'erro');
+        }
     };
 
     // --- GASTOS FIXOS ---
@@ -252,15 +263,26 @@ export default function Dashboard() {
             });
             setIsModalEditarFixoOpen(false);
             buscarDados();
-        } catch (erro) { console.error(erro); }
+            mostrarNotificacao('Gasto fixo atualizado!', 'sucesso');
+        } catch (erro) {
+            console.error(erro);
+            mostrarNotificacao('Erro ao atualizar gasto fixo.', 'erro');
+        }
     };
 
     const handleApagarFixoEdicao = async () => {
         if (!window.confirm(`Deseja cancelar o gasto recorrente "${fixoEmEdicao.descricao}"?`)) return;
         try {
             const resposta = await fetch(`${import.meta.env.VITE_API_URL}/gastos-fixos/${fixoEmEdicao.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
-            if (resposta.ok) { setIsModalEditarFixoOpen(false); buscarDados(); }
-        } catch (erro) { console.error(erro); }
+            if (resposta.ok) {
+                setIsModalEditarFixoOpen(false);
+                buscarDados();
+                mostrarNotificacao('Gasto fixo excluído com sucesso!', 'sucesso');
+            }
+        } catch (erro) {
+            console.error(erro);
+            mostrarNotificacao('Erro ao excluir gasto fixo.', 'erro');
+        }
     };
 
     // --- RENDAS ---
@@ -291,15 +313,26 @@ export default function Dashboard() {
             });
             setIsModalEditarRendaOpen(false);
             buscarDados();
-        } catch (erro) { console.error(erro); }
+            mostrarNotificacao('Renda atualizada com sucesso!', 'sucesso');
+        } catch (erro) {
+            console.error(erro);
+            mostrarNotificacao('Erro ao atualizar renda.', 'erro');
+        }
     };
 
     const handleApagarRendaEdicao = async () => {
         if (!window.confirm(`Deseja apagar a entrada de dinheiro "${rendaEmEdicao.descricao}"?`)) return;
         try {
             const resposta = await fetch(`${import.meta.env.VITE_API_URL}/rendas/${rendaEmEdicao.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
-            if (resposta.ok) { setIsModalEditarRendaOpen(false); buscarDados(); }
-        } catch (erro) { console.error(erro); }
+            if (resposta.ok) {
+                setIsModalEditarRendaOpen(false)
+                buscarDados();
+                mostrarNotificacao('Renda excluída com sucesso!', 'sucesso');
+            }
+        } catch (erro) {
+            console.error(erro);
+            mostrarNotificacao('Erro ao excluir renda.', 'erro');
+        }
     };
 
     // --- CATEGORIAS ---
@@ -317,17 +350,31 @@ export default function Dashboard() {
                 buscarDados();
                 setNovaDespesa(p => ({ ...p, idCategoria: nova.id.toString() }));
                 setNovoGastoFixo(p => ({ ...p, idCategoria: nova.id.toString() }));
+                mostrarNotificacao(`Categoria "${nomeCategoria}" criada!`, 'sucesso');
+            }else {
+                mostrarNotificacao('Erro ao criar categoria.', 'erro');
             }
-        } catch (erro) { console.error("Erro ao criar categoria:", erro); }
+        } catch (erro) {
+            console.error("Erro ao criar categoria:", erro);
+            mostrarNotificacao('Erro de conexão.', 'erro');
+        }
     };
 
     const handleExcluirCategoria = async (id, nome) => {
         if (!window.confirm(`Tem certeza que deseja apagar a categoria "${nome}"?`)) return;
         try {
             const resposta = await fetch(`${import.meta.env.VITE_API_URL}/categorias/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
-            if (resposta.ok) { setCategorias(categorias.filter(c => c.id !== id)); }
-            else { alert("Não é possível excluir categorias globais ou em uso."); }
-        } catch (erro) { console.error("Erro ao excluir categoria:", erro); }
+            if (resposta.ok) {
+                setCategorias(categorias.filter(c => c.id !== id));
+                mostrarNotificacao(`Categoria "${nome}" apagada!`, 'sucesso');
+            }
+            else {
+                mostrarNotificacao("Não é possível excluir categorias globais ou em uso.", 'erro');
+            }
+        } catch (erro) {
+            console.error("Erro ao excluir categoria:", erro);
+            mostrarNotificacao('Erro ao excluir categoria.', 'erro');
+        }
     };
 
     // =========================================================================
