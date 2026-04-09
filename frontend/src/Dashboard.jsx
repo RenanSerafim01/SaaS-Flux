@@ -369,7 +369,7 @@ export default function Dashboard() {
                 mostrarNotificacao(`Categoria "${nome}" apagada!`, 'sucesso');
             }
             else {
-                mostrarNotificacao("Não é possível excluir categorias globais ou em uso.", 'erro');
+                mostrarNotificacao(`A categoria "${nome}" está em uso por algum registro e não pode ser excluída.`, 'erro');
             }
         } catch (erro) {
             console.error("Erro ao excluir categoria:", erro);
@@ -397,8 +397,21 @@ export default function Dashboard() {
     }).filter(c => c.total > 0).sort((a, b) => b.total - a.total).slice(0, 5);
 
     const totalDespesasParaPorcentagem = resumoCategorias.reduce((acc, c) => acc + c.total, 0) || 1;
-    const despesasOrdenadas = [...despesas].sort((a, b) => new Date(b.dataDespesa) - new Date(a.dataDespesa));
+
+    const despesasOrdenadas = [...despesas].sort((a, b) => {
+        const dateDiff = new Date(b.dataDespesa) - new Date(a.dataDespesa);
+        if (dateDiff !== 0) return dateDiff;
+        return b.id - a.id;
+    });
+
     const fixosOrdenados = [...gastosFixos].reverse();
+
+    const rendasOrdenadas = [...rendas].sort((a, b) => {
+        const dateDiff = new Date(b.dataRecebimento) - new Date(a.dataRecebimento);
+        if (dateDiff !== 0) return dateDiff;
+        return b.id - a.id;
+    });
+
     const despesasAtuais = despesasOrdenadas.slice((paginaDespesas - 1) * itensPorPagina, paginaDespesas * itensPorPagina);
     const fixosAtuais = fixosOrdenados.slice((paginaFixos - 1) * itensPorPagina, paginaFixos * itensPorPagina);
 
@@ -643,7 +656,7 @@ export default function Dashboard() {
                                     {rendas.length === 0 ? (
                                         <p className="text-gray-500 text-xs py-2">Nenhuma renda registrada.</p>
                                     ) : (
-                                        rendas.map((renda, index) => (
+                                        rendasOrdenadas.map((renda, index) => (
                                             <div key={index} className="group flex justify-between items-center py-3 border-b border-gray-800/50 hover:bg-[#1a2133] rounded-xl px-2 transition-colors gap-3">
                                                 <div className="flex flex-col flex-1 min-w-0">
                                                     <p className="font-extrabold text-xs text-gray-200 truncate">{renda.descricao || 'Entrada'}</p>
@@ -651,7 +664,6 @@ export default function Dashboard() {
                                                 </div>
                                                 <div className="flex items-center gap-2 md:gap-4 shrink-0">
                                                     <p className="font-bold text-emerald-400 text-sm md:text-base">+ {formatarMoeda((renda.valorCentavos || 0) / 100)}</p>
-                                                    {/* BOTÃO DO LÁPIS AQUI */}
                                                     <button onClick={() => abrirModalEditarRenda(renda)} className="text-gray-600 hover:text-emerald-500 md:opacity-0 group-hover:opacity-100 transition-all p-2" title="Editar Renda">{iconeLapis}</button>
                                                 </div>
                                             </div>
