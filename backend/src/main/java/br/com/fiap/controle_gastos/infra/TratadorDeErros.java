@@ -27,9 +27,10 @@ public class TratadorDeErros {
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity tratarErroDeChaveEstrangeira(DataIntegrityViolationException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body("Erro: Não é possível excluir este registro pois ele já possui outros itens vinculados a ele no sistema.");
+    public ResponseEntity tratarErroIntegridadeDados(DataIntegrityViolationException ex) {
+        System.out.println(" ERRO DE INTEGRIDADE NO BANCO: " + ex.getMessage());
+
+        return ResponseEntity.badRequest().body("Erro de integridade no banco. Verifique se existem informações obrigatórias faltando ou itens vinculados.");
     }
 
 }
