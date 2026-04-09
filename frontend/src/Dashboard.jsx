@@ -43,6 +43,15 @@ export default function Dashboard() {
     const [paginaFixos, setPaginaFixos] = useState(1);
     const itensPorPagina = 6;
 
+    const [notificacao, setNotificacao] = useState({ visivel: false, mensagem: '', tipo: 'sucesso' });
+
+    const mostrarNotificacao = (mensagem, tipo = 'sucesso') => {
+        setNotificacao({ visivel: true, mensagem, tipo });
+        setTimeout(() => {
+            setNotificacao(prev => ({ ...prev, visivel: false }));
+        }, 3000);
+    };
+
     const buscarDados = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -112,6 +121,7 @@ export default function Dashboard() {
                 setNovaRenda({ descricao: '', valorReais: '', dataRecebimento: new Date().toISOString().split('T')[0] });
                 setIsModalRendaOpen(false);
                 buscarDados();
+                mostrarNotificacao('Renda registrada com sucesso!');
             } else {
                 alert(`Erro do Servidor: ${await resposta.text() || resposta.status}`);
             }
@@ -136,6 +146,7 @@ export default function Dashboard() {
                 setIsModalOpen(false);
                 buscarDados();
                 setPaginaDespesas(1);
+                mostrarNotificacao('Gasto registrado com sucesso!');
             }
         } catch (erro) { console.error(erro); } finally { setEnviandoForm(false); }
     };
@@ -157,6 +168,7 @@ export default function Dashboard() {
                 setIsModalFixoOpen(false);
                 buscarDados();
                 setPaginaFixos(1);
+                mostrarNotificacao('Gasto fixo registrado com sucesso!')
             }
         } catch (erro) { console.error(erro); } finally { setEnviandoFixo(false); }
     };
@@ -822,6 +834,20 @@ export default function Dashboard() {
                     </div>
                 </div>
             )}
+            {/* ======================================================================= */}
+            {/* TOAST DE NOTIFICAÇÃO */}
+            {/* ======================================================================= */}
+            {notificacao.visivel && (
+                <div className={`fixed top-4 right-4 md:top-10 md:right-10 z-[100] px-6 py-4 rounded-2xl shadow-2xl transform transition-all duration-300 flex items-center gap-3 border backdrop-blur-md ${
+                    notificacao.tipo === 'sucesso'
+                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                        : 'bg-red-500/10 border-red-500/20 text-red-400'
+                }`}>
+                    <span className="text-xl">{notificacao.tipo === 'sucesso' ? '✅' : '❌'}</span>
+                    <p className="font-bold text-sm tracking-wide uppercase">{notificacao.mensagem}</p>
+                </div>
+            )}
+
         </div>
     );
 }
