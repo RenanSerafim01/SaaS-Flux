@@ -4,7 +4,9 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 
 public record DadosAtualizacaoRenda(
-        @NotNull Long id,
+        @NotNull
+        Long id,
+
         String descricao,
         Long valorCentavos,
         LocalDate dataRecebimento

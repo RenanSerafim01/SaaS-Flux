@@ -5,7 +5,9 @@ import jakarta.validation.constraints.NotNull;
 import java.time.OffsetDateTime;
 
 public record DadosAtualizacaoDespesa(
-        @NotNull Long id,
+        @NotNull
+        Long id,
+
         String descricao,
         Integer valorCentavos,
         OffsetDateTime dataDespesa,

@@ -8,11 +8,11 @@ import jakarta.validation.constraints.Positive;
 import java.time.OffsetDateTime;
 
 public record DadosCadastroDespesa(
-        @NotBlank(message = "A descrição não pode ficar em branco")
+        @NotBlank(message = "A descrição é obrigatória")
         String descricao,
 
         @NotNull(message = "O valor da despesa é obrigatório")
-        @Positive(message = "O valor não pode ser negativo ou zero!")
+        @Positive(message = "O valor deve ser maior que zero")
         Integer valorCentavos,
 
         @NotNull(message = "A data da despesa é obrigatória")
@@ -24,5 +24,4 @@ public record DadosCadastroDespesa(
 
         @NotNull(message = "O ID da categoria é obrigatório")
         Long idCategoria
-) {
-}
+) {}

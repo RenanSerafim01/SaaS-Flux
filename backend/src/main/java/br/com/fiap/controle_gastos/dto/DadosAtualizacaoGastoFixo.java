@@ -4,7 +4,9 @@ import br.com.fiap.controle_gastos.model.TipoPagamento;
 import jakarta.validation.constraints.NotNull;
 
 public record DadosAtualizacaoGastoFixo(
-        @NotNull Long id,
+        @NotNull
+        Long id,
+
         String descricao,
         Integer valorCentavos,
         Integer diaVencimento,
