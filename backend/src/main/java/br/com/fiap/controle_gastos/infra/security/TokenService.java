@@ -15,6 +15,10 @@ import java.time.ZoneOffset;
 @Service
 public class TokenService {
 
+    private static final String ISSUER = "API Controle de Gastos";
+    private static final String FUSO_HORARIO_BRASILIA = "-03:00";
+    private static final long HORAS_EXPIRACAO = 2L;
+
     @Value("${api.security.token.secret}")
     private String secret;
 
@@ -22,12 +26,12 @@ public class TokenService {
         try {
             var algoritmo = Algorithm.HMAC256(secret);
             return JWT.create()
-                    .withIssuer("API Controle de Gastos")
+                    .withIssuer(ISSUER)
                     .withSubject(usuario.getLogin())
                     .withExpiresAt(dataExpiracao())
                     .sign(algoritmo);
-        } catch (JWTCreationException exception){
-            throw new RuntimeException("Erro ao gerar token jwt", exception);
+        } catch (JWTCreationException exception) {
+            throw new RuntimeException("Erro ao gerar token JWT", exception);
         }
     }
 
@@ -35,16 +39,17 @@ public class TokenService {
         try {
             var algoritmo = Algorithm.HMAC256(secret);
             return JWT.require(algoritmo)
-                    .withIssuer("API Controle de Gastos")
+                    .withIssuer(ISSUER)
                     .build()
                     .verify(tokenJWT)
                     .getSubject();
         } catch (JWTVerificationException exception) {
-            throw new RuntimeException("Token JWT inválido ou expirado!");
+
+            throw new RuntimeException("Token JWT inválido ou expirado.");
         }
     }
 
     private Instant dataExpiracao() {
-        return LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.of("-03:00"));
+        return LocalDateTime.now().plusHours(HORAS_EXPIRACAO).toInstant(ZoneOffset.of(FUSO_HORARIO_BRASILIA));
     }
 }

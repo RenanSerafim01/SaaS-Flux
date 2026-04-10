@@ -1,36 +1,52 @@
 package br.com.fiap.controle_gastos.infra;
 
+import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
+import static org.springframework.http.ResponseEntity.*;
+
+@Slf4j
 @RestControllerAdvice
 public class TratadorDeErros {
 
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<Void> tratarErro404() {
+        return notFound().build();
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> tratarErrosDeValidacao(MethodArgumentNotValidException ex) {
+    public ResponseEntity<List<DadosErroValidacao>> tratarErrosDeValidacao(MethodArgumentNotValidException ex) {
+        var erros = ex.getFieldErrors().stream()
+                .map(DadosErroValidacao::new)
+                .toList();
 
-        Map<String, String> erros = new HashMap<>();
-
-        for (FieldError erro : ex.getBindingResult().getFieldErrors()) {
-            erros.put(erro.getField(), erro.getDefaultMessage());
-        }
-
-        return ResponseEntity.badRequest().body(erros);
+        return badRequest().body(erros);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity tratarErroIntegridadeDados(DataIntegrityViolationException ex) {
-        System.out.println(" ERRO DE INTEGRIDADE NO BANCO: " + ex.getMessage());
+    public ResponseEntity<String> tratarErroIntegridadeDados(DataIntegrityViolationException ex) {
 
-        return ResponseEntity.badRequest().body("Erro de integridade no banco. Verifique se existem informações obrigatórias faltando ou itens vinculados.");
+        log.error("Erro de integridade relacional no banco de dados", ex);
+        return badRequest().body("Não foi possível processar a requisição devido a um conflito de dados. Verifique se existem informações obrigatórias faltando ou itens já vinculados.");
     }
 
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> tratarErro500(Exception ex) {
+        log.error("Erro interno inesperado no servidor", ex);
+        return internalServerError().body("Ocorreu um erro interno no servidor. Tente novamente mais tarde.");
+    }
+
+    private record DadosErroValidacao(String campo, String mensagem) {
+        public DadosErroValidacao(FieldError erro) {
+            this(erro.getField(), erro.getDefaultMessage());
+        }
+    }
 }
