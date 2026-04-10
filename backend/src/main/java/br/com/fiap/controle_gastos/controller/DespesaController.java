@@ -3,13 +3,13 @@ package br.com.fiap.controle_gastos.controller;
 import br.com.fiap.controle_gastos.dto.DadosAtualizacaoDespesa;
 import br.com.fiap.controle_gastos.dto.DadosCadastroDespesa;
 import br.com.fiap.controle_gastos.dto.DadosDetalhamentoDespesa;
-import br.com.fiap.controle_gastos.model.Categoria;
 import br.com.fiap.controle_gastos.model.Despesa;
 import br.com.fiap.controle_gastos.model.Usuario;
 import br.com.fiap.controle_gastos.repository.CategoriaRepository;
 import br.com.fiap.controle_gastos.repository.DespesaRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -17,20 +17,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
-
 import java.util.List;
+import static org.springframework.http.ResponseEntity.*;
 
 @RestController
 @RequestMapping("/despesas")
+@RequiredArgsConstructor
 public class DespesaController {
 
     private final DespesaRepository despesaRepository;
     private final CategoriaRepository categoriaRepository;
-
-    public DespesaController(DespesaRepository despesaRepository, CategoriaRepository categoriaRepository) {
-        this.despesaRepository = despesaRepository;
-        this.categoriaRepository = categoriaRepository;
-    }
 
     @PostMapping
     public ResponseEntity<DadosDetalhamentoDespesa> criarDespesa(
@@ -38,14 +34,15 @@ public class DespesaController {
             @AuthenticationPrincipal Usuario usuarioLogado,
             UriComponentsBuilder uriBuilder) {
 
-        Categoria categoria = categoriaRepository.findById(dados.idCategoria())
+        var categoria = categoriaRepository.findById(dados.idCategoria())
                 .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada"));
 
-        Despesa novaDespesa = new Despesa(dados, categoria, usuarioLogado);
+        var novaDespesa = new Despesa(dados, categoria, usuarioLogado);
         despesaRepository.save(novaDespesa);
 
         var uri = uriBuilder.path("/despesas/{id}").buildAndExpand(novaDespesa.getId()).toUri();
-        return ResponseEntity.created(uri).body(new DadosDetalhamentoDespesa(novaDespesa));
+
+        return created(uri).body(new DadosDetalhamentoDespesa(novaDespesa));
     }
 
     @GetMapping
@@ -53,8 +50,10 @@ public class DespesaController {
             @PageableDefault(size = 10, sort = {"dataDespesa"}) Pageable paginacao,
             @AuthenticationPrincipal Usuario usuarioLogado) {
 
-        var page = despesaRepository.findAllByUsuarioId(usuarioLogado.getId(), paginacao).map(DadosDetalhamentoDespesa::new);
-        return ResponseEntity.ok(page);
+        var page = despesaRepository.findAllByUsuarioId(usuarioLogado.getId(), paginacao)
+                .map(DadosDetalhamentoDespesa::new);
+
+        return ok(page);
     }
 
     @GetMapping("/{id}")
@@ -63,8 +62,8 @@ public class DespesaController {
             @AuthenticationPrincipal Usuario usuarioLogado) {
 
         return despesaRepository.findByIdAndUsuarioId(id, usuarioLogado.getId())
-                .map(despesa -> ResponseEntity.ok(new DadosDetalhamentoDespesa(despesa)))
-                .orElse(ResponseEntity.notFound().build());
+                .map(despesa -> ok(new DadosDetalhamentoDespesa(despesa)))
+                .orElse(notFound().build());
     }
 
     @GetMapping("/categoria/{nome}")
@@ -76,7 +75,8 @@ public class DespesaController {
                 .stream()
                 .map(DadosDetalhamentoDespesa::new)
                 .toList();
-        return ResponseEntity.ok(lista);
+
+        return ok(lista);
     }
 
     @PutMapping
@@ -84,20 +84,24 @@ public class DespesaController {
             @Valid @RequestBody DadosAtualizacaoDespesa dados,
             @AuthenticationPrincipal Usuario usuarioLogado) {
 
-        return despesaRepository.findByIdAndUsuarioId(dados.id(), usuarioLogado.getId())
-                .map(despesaExistente -> {
-                    despesaExistente.atualizarInformacoes(dados);
+        var despesaOptional = despesaRepository.findByIdAndUsuarioId(dados.id(), usuarioLogado.getId());
 
-                    if (dados.idCategoria() != null) {
-                        Categoria categoria = categoriaRepository.findById(dados.idCategoria())
-                                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada"));
-                        despesaExistente.setCategoria(categoria); // Garanta que exista um 'setCategoria' na classe Despesa
-                    }
+        if (despesaOptional.isEmpty()) {
+            return notFound().build();
+        }
 
-                    despesaRepository.save(despesaExistente);
-                    return ResponseEntity.ok(new DadosDetalhamentoDespesa(despesaExistente));
-                })
-                .orElse(ResponseEntity.notFound().build());
+        var despesaExistente = despesaOptional.get();
+        despesaExistente.atualizarInformacoes(dados);
+
+        if (dados.idCategoria() != null) {
+            var categoria = categoriaRepository.findById(dados.idCategoria())
+                    .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada"));
+            despesaExistente.setCategoria(categoria);
+        }
+
+        despesaRepository.save(despesaExistente);
+
+        return ok(new DadosDetalhamentoDespesa(despesaExistente));
     }
 
     @DeleteMapping("/{id}")
@@ -105,12 +109,15 @@ public class DespesaController {
             @PathVariable Long id,
             @AuthenticationPrincipal Usuario usuarioLogado) {
 
-        return despesaRepository.findByIdAndUsuarioId(id, usuarioLogado.getId())
-                .map(despesa -> {
-                    despesaRepository.delete(despesa);
-                    return ResponseEntity.noContent().<Void>build();
-                })
-                .orElse(ResponseEntity.notFound().build());
+        var despesaOptional = despesaRepository.findByIdAndUsuarioId(id, usuarioLogado.getId());
+
+        if (despesaOptional.isEmpty()) {
+            return notFound().build();
+        }
+
+        despesaRepository.delete(despesaOptional.get());
+
+        return noContent().build();
     }
 
     @GetMapping("/total-por-categoria/{idCategoria}")
@@ -118,7 +125,8 @@ public class DespesaController {
             @PathVariable Long idCategoria,
             @AuthenticationPrincipal Usuario usuarioLogado) {
 
-        Long total = despesaRepository.somarGastosPorCategoriaEUsuario(idCategoria, usuarioLogado.getId());
-        return ResponseEntity.ok(total != null ? total : 0L);
+        var total = despesaRepository.somarGastosPorCategoriaEUsuario(idCategoria, usuarioLogado.getId());
+
+        return ok(total != null ? total : 0L);
     }
 }
