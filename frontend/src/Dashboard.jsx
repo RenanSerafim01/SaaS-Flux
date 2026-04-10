@@ -42,6 +42,7 @@ export default function Dashboard() {
     const [paginaDespesas, setPaginaDespesas] = useState(1);
     const [paginaFixos, setPaginaFixos] = useState(1);
     const [paginaRendas, setPaginaRendas] = useState(1);
+    const [paginaCategorias, setPaginaCategorias] = useState(1);
     const itensPorPagina = 6;
 
     const [notificacao, setNotificacao] = useState({ visivel: false, mensagem: '', tipo: 'sucesso' });
@@ -392,13 +393,9 @@ export default function Dashboard() {
     const corSaldoCard = saldoConsolidado >= 0 ? "from-emerald-600 to-teal-900 shadow-emerald-900/20" : "from-rose-600 to-red-900 shadow-rose-900/20";
     const totalTransacoes = despesas.length + gastosFixos.length;
 
-    const resumoCategorias = categorias.map(cat => {
-        const totalAvulsas = despesas.filter(d => (d.categoria?.id || d.categoria) === cat.id).reduce((acc, d) => acc + ((d.valorCentavos || 0) / 100), 0);
-        const totalGastosFixos = gastosFixos.filter(f => (f.categoria?.id || f.categoria) === cat.id).reduce((acc, f) => acc + ((f.valorCentavos || 0) / 100), 0);
-        return { nome: cat.nome || cat.category_name, total: totalAvulsas + totalGastosFixos };
-    }).filter(c => c.total > 0).sort((a, b) => b.total - a.total).slice(0, 5);
-
-    const totalDespesasParaPorcentagem = resumoCategorias.reduce((acc, c) => acc + c.total, 0) || 1;
+    // =========================================================================
+    // ORDENAÇÕES E CÁLCULOS
+    // =========================================================================
 
     const despesasOrdenadas = [...despesas].sort((a, b) => {
         const dateDiff = new Date(b.dataDespesa) - new Date(a.dataDespesa);
@@ -406,7 +403,7 @@ export default function Dashboard() {
         return b.id - a.id;
     });
 
-    const fixosOrdenados = [...gastosFixos].reverse();
+    const fixosOrdenados = [...gastosFixos].sort((a, b) => a.diaVencimento - b.diaVencimento);
 
     const rendasOrdenadas = [...rendas].sort((a, b) => {
         const dateDiff = new Date(b.dataRecebimento) - new Date(a.dataRecebimento);
@@ -414,10 +411,21 @@ export default function Dashboard() {
         return b.id - a.id;
     });
 
+    const resumoCategorias = categorias.map(cat => {
+        const totalAvulsas = despesas.filter(d => (d.categoria?.id || d.categoria) === cat.id).reduce((acc, d) => acc + ((d.valorCentavos || 0) / 100), 0);
+        const totalGastosFixos = gastosFixos.filter(f => (f.categoria?.id || f.categoria) === cat.id).reduce((acc, f) => acc + ((f.valorCentavos || 0) / 100), 0);
+        return { nome: cat.nome || cat.category_name, total: totalAvulsas + totalGastosFixos };
+    }).filter(c => c.total > 0).sort((a, b) => b.total - a.total);
+
+    const totalDespesasParaPorcentagem = resumoCategorias.reduce((acc, c) => acc + c.total, 0) || 1;
+
+    // =========================================================================
+    // FATIAMENTO DAS PÁGINAS
+    // =========================================================================
     const despesasAtuais = despesasOrdenadas.slice((paginaDespesas - 1) * itensPorPagina, paginaDespesas * itensPorPagina);
     const fixosAtuais = fixosOrdenados.slice((paginaFixos - 1) * itensPorPagina, paginaFixos * itensPorPagina);
     const rendasAtuais = rendasOrdenadas.slice((paginaRendas - 1) * itensPorPagina, paginaRendas * itensPorPagina);
-
+    const categoriasAtuais = resumoCategorias.slice((paginaCategorias - 1) * 5, paginaCategorias * 5);
     // =========================================================================
     // CSS CLASSES
     // =========================================================================
@@ -628,10 +636,11 @@ export default function Dashboard() {
                                     <p className="text-gray-500 text-xs md:text-sm">Sem dados suficientes.</p>
                                 ) : (
                                     <div className="space-y-5 md:space-y-6">
-                                        {resumoCategorias.map((cat, index) => {
+                                        {categoriasAtuais.map((cat, index) => { // <-- TROCADO AQUI PARA categoriasAtuais
                                             const porcentagem = Math.round((cat.total / totalDespesasParaPorcentagem) * 100);
                                             const bgColors = ['bg-sky-500', 'bg-indigo-500', 'bg-fuchsia-500', 'bg-orange-500', 'bg-teal-500'];
-                                            const corAtual = bgColors[index % bgColors.length];
+                                            // Para manter as cores consistentes mesmo mudando de página:
+                                            const corAtual = bgColors[(index + ((paginaCategorias - 1) * 5)) % bgColors.length];
 
                                             return (
                                                 <div key={index}>
@@ -648,6 +657,15 @@ export default function Dashboard() {
                                                 </div>
                                             );
                                         })}
+                                    </div>
+                                )}
+
+                                {/* ADICIONADO: PAGINAÇÃO DAS CATEGORIAS */}
+                                {resumoCategorias.length > 5 && (
+                                    <div className="flex justify-between items-center mt-4 md:mt-6 pt-4 border-t border-gray-800/50 text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        <button disabled={paginaCategorias === 1} onClick={() => setPaginaCategorias(p => p - 1)} className="hover:text-fuchsia-400 disabled:opacity-50 px-3 py-1.5 transition-colors">Anterior</button>
+                                        <span>Pág {paginaCategorias}</span>
+                                        <button disabled={resumoCategorias.length <= paginaCategorias * 5} onClick={() => setPaginaCategorias(p => p + 1)} className="hover:text-fuchsia-400 disabled:opacity-50 px-3 py-1.5 transition-colors">Próxima</button>
                                     </div>
                                 )}
                             </div>
