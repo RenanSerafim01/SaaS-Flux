@@ -41,6 +41,7 @@ export default function Dashboard() {
 
     const [paginaDespesas, setPaginaDespesas] = useState(1);
     const [paginaFixos, setPaginaFixos] = useState(1);
+    const [paginaRendas, setPaginaRendas] = useState(1);
     const itensPorPagina = 6;
 
     const [notificacao, setNotificacao] = useState({ visivel: false, mensagem: '', tipo: 'sucesso' });
@@ -121,6 +122,7 @@ export default function Dashboard() {
                 setNovaRenda({ descricao: '', valorReais: '', dataRecebimento: new Date().toISOString().split('T')[0] });
                 setIsModalRendaOpen(false);
                 buscarDados();
+                setPaginaRendas(1);
                 mostrarNotificacao('Renda registrada com sucesso!');
             } else {
                 alert(`Erro do Servidor: ${await resposta.text() || resposta.status}`);
@@ -414,6 +416,7 @@ export default function Dashboard() {
 
     const despesasAtuais = despesasOrdenadas.slice((paginaDespesas - 1) * itensPorPagina, paginaDespesas * itensPorPagina);
     const fixosAtuais = fixosOrdenados.slice((paginaFixos - 1) * itensPorPagina, paginaFixos * itensPorPagina);
+    const rendasAtuais = rendasOrdenadas.slice((paginaRendas - 1) * itensPorPagina, paginaRendas * itensPorPagina);
 
     // =========================================================================
     // CSS CLASSES
@@ -648,15 +651,14 @@ export default function Dashboard() {
                                     </div>
                                 )}
                             </div>
-
                             {/* TABELA DE HISTÓRICO DE RENDAS */}
                             <div className={cardClass}>
                                 <h2 className="text-xs md:text-sm font-black text-white uppercase tracking-widest mb-4 md:mb-6">Histórico de Entradas</h2>
                                 <div className="space-y-1">
-                                    {rendas.length === 0 ? (
+                                    {rendasAtuais.length === 0 ? (
                                         <p className="text-gray-500 text-xs py-2">Nenhuma renda registrada.</p>
                                     ) : (
-                                        rendasOrdenadas.map((renda, index) => (
+                                        rendasAtuais.map((renda, index) => (
                                             <div key={index} className="group flex justify-between items-center py-3 border-b border-gray-800/50 hover:bg-[#1a2133] rounded-xl px-2 transition-colors gap-3">
                                                 <div className="flex flex-col flex-1 min-w-0">
                                                     <p className="font-extrabold text-xs text-gray-200 truncate">{renda.descricao || 'Entrada'}</p>
@@ -670,6 +672,14 @@ export default function Dashboard() {
                                         ))
                                     )}
                                 </div>
+
+                                {rendasOrdenadas.length > 0 && (
+                                    <div className="flex justify-between items-center mt-4 md:mt-6 pt-4 text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        <button disabled={paginaRendas === 1} onClick={() => setPaginaRendas(p => p - 1)} className="hover:text-emerald-400 disabled:opacity-50 px-3 py-1.5 transition-colors">Anterior</button>
+                                        <span>Pág {paginaRendas}</span>
+                                        <button disabled={rendasOrdenadas.length <= paginaRendas * itensPorPagina} onClick={() => setPaginaRendas(p => p + 1)} className="hover:text-emerald-400 disabled:opacity-50 px-3 py-1.5 transition-colors">Próxima</button>
+                                    </div>
+                                )}
                             </div>
 
                         </div>
