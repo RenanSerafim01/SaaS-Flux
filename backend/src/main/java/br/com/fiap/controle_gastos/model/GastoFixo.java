@@ -3,18 +3,18 @@ package br.com.fiap.controle_gastos.model;
 import br.com.fiap.controle_gastos.dto.DadosAtualizacaoGastoFixo;
 import br.com.fiap.controle_gastos.dto.DadosCadastroGastoFixo;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "cfg_recurring_expense")
 @Getter
-@Setter
-@NoArgsConstructor
+
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EqualsAndHashCode(of = "id")
 public class GastoFixo {
 
@@ -54,9 +54,21 @@ public class GastoFixo {
     }
 
     public void atualizarInformacoes(DadosAtualizacaoGastoFixo dados) {
-        if (dados.descricao() != null) { this.descricao = dados.descricao(); }
-        if (dados.valorCentavos() != null) { this.valorCentavos = dados.valorCentavos(); }
-        if (dados.diaVencimento() != null) { this.diaVencimento = dados.diaVencimento(); }
-        if (dados.metodoPagamento() != null) { this.metodoPagamento = dados.metodoPagamento(); }
+        if (dados.descricao() != null && !dados.descricao().isBlank()) {
+            this.descricao = dados.descricao();
+        }
+        if (dados.valorCentavos() != null) {
+            this.valorCentavos = dados.valorCentavos();
+        }
+        if (dados.diaVencimento() != null) {
+            this.diaVencimento = dados.diaVencimento();
+        }
+        if (dados.metodoPagamento() != null) {
+            this.metodoPagamento = dados.metodoPagamento();
+        }
+    }
+
+    public void setCategoria(Categoria categoria) {
+        this.categoria = categoria;
     }
 }

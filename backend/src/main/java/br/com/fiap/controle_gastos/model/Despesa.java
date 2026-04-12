@@ -3,10 +3,10 @@ package br.com.fiap.controle_gastos.model;
 import br.com.fiap.controle_gastos.dto.DadosAtualizacaoDespesa;
 import br.com.fiap.controle_gastos.dto.DadosCadastroDespesa;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -15,8 +15,7 @@ import java.time.OffsetDateTime;
 @Entity
 @Table(name = "trx_expense")
 @Getter
-@Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EqualsAndHashCode(of = "id")
 public class Despesa {
 
@@ -28,7 +27,7 @@ public class Despesa {
     @JoinColumn(name = "id_master_user", nullable = false)
     private Usuario usuario;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_ref_expense_category", nullable = false)
     private Categoria categoria;
 
@@ -55,16 +54,8 @@ public class Despesa {
         this.usuario = usuario;
     }
 
-    public void atualizarInformacoes(DadosCadastroDespesa dados, Categoria categoria) {
-        this.descricao = dados.descricao();
-        this.valorCentavos = dados.valorCentavos();
-        this.dataDespesa = dados.dataDespesa();
-        this.metodoPagamento = dados.metodoPagamento();
-        this.categoria = categoria;
-    }
-
     public void atualizarInformacoes(DadosAtualizacaoDespesa dados) {
-        if (dados.descricao() != null) {
+        if (dados.descricao() != null && !dados.descricao().isBlank()) {
             this.descricao = dados.descricao();
         }
         if (dados.valorCentavos() != null) {
@@ -76,5 +67,9 @@ public class Despesa {
         if (dados.metodoPagamento() != null) {
             this.metodoPagamento = dados.metodoPagamento();
         }
+    }
+
+    public void setCategoria(Categoria categoria) {
+        this.categoria = categoria;
     }
 }

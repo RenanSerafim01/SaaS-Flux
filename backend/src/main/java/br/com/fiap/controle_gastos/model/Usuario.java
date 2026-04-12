@@ -1,7 +1,7 @@
 package br.com.fiap.controle_gastos.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,11 +13,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
+@Entity
 @Table(name = "master_user")
-@Entity(name = "Usuario")
-@Getter // <-- O Lombok já vai criar o getFullName() automaticamente graças a isso!
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EqualsAndHashCode(of = "id")
 public class Usuario implements UserDetails {
 
@@ -25,10 +25,20 @@ public class Usuario implements UserDetails {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "full_name")
+    @Column(name = "full_name", nullable = false)
     private String fullName;
+
+    @Column(nullable = false, unique = true)
     private String login;
+
+    @Column(nullable = false)
     private String senha;
+
+    public Usuario(String fullName, String login, String senha) {
+        this.fullName = fullName;
+        this.login = login;
+        this.senha = senha;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -36,27 +46,26 @@ public class Usuario implements UserDetails {
     }
 
     @Override
-    public String getPassword() { return senha; }
+    public String getPassword() {
+        return senha; }
 
     @Override
-    public String getUsername() { return login; }
+    public String getUsername() {
+        return login; }
 
     @Override
-    public boolean isAccountNonExpired() { return true; }
+    public boolean isAccountNonExpired() {
+        return true; }
 
     @Override
-    public boolean isAccountNonLocked() { return true; }
+    public boolean isAccountNonLocked() {
+        return true; }
 
     @Override
-    public boolean isCredentialsNonExpired() { return true; }
+    public boolean isCredentialsNonExpired() {
+        return true; }
 
     @Override
-    public boolean isEnabled() { return true; }
-
-    // Construtor corrigido para receber e salvar o nome
-    public Usuario(String fullName, String login, String senha) {
-        this.fullName = fullName;
-        this.login = login;
-        this.senha = senha;
-    }
+    public boolean isEnabled() {
+        return true; }
 }
