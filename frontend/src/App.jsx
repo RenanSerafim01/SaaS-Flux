@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './Dashboard';
 
+// --- COMPONENTES MENORES ---
+
 const FeatureCard = ({ icon, title, description, badge }) => (
     <div className="bg-[#131826] p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-xl border border-gray-800/60 flex flex-col gap-3 md:gap-4 relative overflow-hidden transform hover:-translate-y-2 transition-all duration-300">
         {badge && (
@@ -15,9 +17,11 @@ const FeatureCard = ({ icon, title, description, badge }) => (
     </div>
 );
 
-function LandingPage() {
-    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+// --- PÁGINA PRINCIPAL (LANDING PAGE) ---
 
+function LandingPage() {
+
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isLoginMode, setIsLoginMode] = useState(true);
     const [isRecuperarMode, setIsRecuperarMode] = useState(false);
 
@@ -25,14 +29,17 @@ function LandingPage() {
     const [login, setLogin] = useState('');
     const [senha, setSenha] = useState('');
     const [confirmaSenha, setConfirmaSenha] = useState('');
+
     const [mensagem, setMensagem] = useState({ texto: '', tipo: '' });
     const [enviando, setEnviando] = useState(false);
+
+    // --- CONTROLADORES DE FLUXO ---
 
     const fecharModal = () => {
         setIsLoginModalOpen(false);
         setIsLoginMode(true);
         setIsRecuperarMode(false);
-        setNome(''); // Limpa o nome ao fechar
+        setNome('');
         setLogin('');
         setSenha('');
         setConfirmaSenha('');
@@ -42,7 +49,6 @@ function LandingPage() {
     const handleLogin = async (e) => {
         e.preventDefault();
         setMensagem({ texto: '', tipo: '' });
-
         setEnviando(true);
 
         try {
@@ -55,9 +61,7 @@ function LandingPage() {
             if (resposta.ok) {
                 const dados = await resposta.json();
                 localStorage.setItem('token', dados.token);
-
                 localStorage.setItem('nomeUsuario', dados.nome);
-
                 window.location.href = '/dashboard';
             } else {
                 setMensagem({ texto: 'Usuário ou senha incorretos.', tipo: 'erro' });
@@ -66,7 +70,7 @@ function LandingPage() {
         } catch (erro) {
             console.error(erro);
             setMensagem({ texto: 'Servidor indisponível no momento.', tipo: 'erro' });
-        }finally {
+        } finally {
             setEnviando(false);
         }
     };
@@ -86,7 +90,6 @@ function LandingPage() {
             const resposta = await fetch(`${import.meta.env.VITE_API_URL}/cadastro`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-
                 body: JSON.stringify({ nome, login, senha })
             });
 
@@ -106,7 +109,7 @@ function LandingPage() {
         } catch (erro) {
             console.error(erro);
             setMensagem({ texto: 'Servidor indisponível no momento.', tipo: 'erro' });
-        }finally {
+        } finally {
             setEnviando(false);
         }
     };
@@ -121,7 +124,6 @@ function LandingPage() {
         }
 
         setEnviando(true);
-
         setMensagem({ texto: 'Buscando conta e gerando link...', tipo: 'sucesso' });
 
         setTimeout(() => {
@@ -135,12 +137,15 @@ function LandingPage() {
         }, 1500);
     };
 
+    // --- RENDERIZAÇÃO DA PÁGINA ---
+
     return (
         <div className="min-h-screen bg-[#0b0f19] text-white font-sans relative selection:bg-sky-500 selection:text-white">
 
             <div className="hidden md:block absolute top-[-10%] left-[20%] w-[40rem] h-[40rem] bg-sky-900/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-            {/* --- CABEÇALHO FLUX --- */}
+            {/* --- CABEÇALHO DA LANDING PAGE --- */}
+
             <header className="fixed top-0 left-0 w-full bg-[#0b0f19]/80 backdrop-blur-md z-40 border-b border-gray-800/60">
                 <nav className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4 flex justify-between items-center">
                     <div className="flex items-center gap-2 md:gap-3">
@@ -170,7 +175,8 @@ function LandingPage() {
                 </nav>
             </header>
 
-            {/* --- SEÇÕES DA PÁGINA MANTIDAS IGUAIS --- */}
+            {/* --- SEÇÃO HERO --- */}
+
             <section className="pt-32 md:pt-40 pb-10 md:pb-16 px-4 md:px-6 relative z-10 flex flex-col items-center justify-center min-h-[65vh] md:min-h-[auto]">
                 <div className="max-w-4xl mx-auto text-center w-full flex flex-col items-center">
                     <span className="inline-block bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[8px] md:text-[10px] px-4 py-1.5 rounded-full font-black tracking-widest uppercase mb-6 md:mb-8">
@@ -188,12 +194,13 @@ function LandingPage() {
                 </div>
             </section>
 
+            {/* --- SEÇÃO DE FEATURES --- */}
+
             <section className="pt-8 pb-16 md:pt-12 md:pb-24 px-4 md:px-6 max-w-7xl mx-auto">
                 <div className="text-center mb-10 md:mb-16">
                     <h2 className="text-[10px] md:text-sm font-black text-sky-500 uppercase tracking-widest mb-2">Recursos Ativos</h2>
                     <p className="text-2xl md:text-4xl font-extrabold text-white uppercase tracking-tight">O que já construímos</p>
                 </div>
-                {/* --- GRID ATUALIZADA PARA ACOMODAR 4 CARDS --- */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
                     <FeatureCard icon="💰" title="Gestão de Renda" description="Controle não só o que sai, mas também o que entra. Registre ganhos e acompanhe o cálculo de saldo consolidado em tempo real." />
                     <FeatureCard icon="🎛️" title="Dashboard Premium" description="Acompanhe seus gastos com uma interface noturna moderna, barras de progresso automáticas e foco total na clareza." />
@@ -201,6 +208,8 @@ function LandingPage() {
                     <FeatureCard icon="📊" title="Categorias" description="Organize o dinheiro do seu jeito. Use nossas categorias de sistema ou crie marcadores personalizados para a sua rotina." />
                 </div>
             </section>
+
+            {/* --- SEÇÃO ROADMAP --- */}
 
             <section className="py-16 md:py-24 px-4 md:px-6 bg-[#131826] border-t border-gray-800/60 relative overflow-hidden">
                 <div className="hidden md:block absolute top-0 right-0 w-[30rem] h-[30rem] bg-indigo-900/10 rounded-full blur-[100px] pointer-events-none"></div>
@@ -212,7 +221,6 @@ function LandingPage() {
                             O Flux está em evolução contínua. Estamos trabalhando pesado nos bastidores para trazer integrações diretas e inteligência artificial para o seu bolso.
                         </p>
                     </div>
-                    {/* --- GESTÃO DE RENDA REMOVIDA DAQUI --- */}
                     <div className="space-y-4 md:space-y-6">
                         <FeatureCard icon="🏦" title="Conexão Bancária" description="Integração via Open Finance para puxar seus saldos e transações automaticamente do seu banco." badge="Em breve" />
                         <FeatureCard icon="🎯" title="Metas e Reservas" description="Defina objetivos, guarde dinheiro com propósito e acompanhe a evolução do seu patrimônio." badge="Em Breve" />
@@ -221,13 +229,16 @@ function LandingPage() {
                 </div>
             </section>
 
+            {/* --- RODAPÉ --- */}
+
             <footer className="py-8 md:py-12 px-6 border-t border-gray-800/60 bg-[#0b0f19] text-center">
                 <span className="text-gray-600 font-extrabold text-[8px] md:text-[10px] tracking-[0.25em] uppercase">
                     Flux Engine © 2026 | Versão Beta 1.0
                 </span>
             </footer>
 
-            {/* --- MODAL LOGIN, CADASTRO E RECUPERAÇÃO --- */}
+            {/* --- MODAL DE AUTENTICAÇÃO --- */}
+
             {isLoginModalOpen && (
                 <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-50 transition-opacity backdrop-blur-sm" onClick={fecharModal}>
 
@@ -253,9 +264,9 @@ function LandingPage() {
                             </div>
                         )}
 
+                        {/* Funcionamento de recuperar senha para o futuro */}
                         <form onSubmit={isRecuperarMode ? handleRecuperarSenha : (isLoginMode ? handleLogin : handleCadastro)} className="space-y-4 md:space-y-5">
 
-                            {/* --- CAMPO NOME: APARECE APENAS NO CADASTRO --- */}
                             {!isLoginMode && !isRecuperarMode && (
                                 <div>
                                     <label className="block mb-2 text-[9px] md:text-[10px] font-black text-gray-500 tracking-widest uppercase">Nome Completo</label>
@@ -304,6 +315,7 @@ function LandingPage() {
                             </div>
                         </form>
 
+                        {/* Alternância de Modos */}
                         <div className="mt-6 text-center border-t border-gray-800/60 pt-6">
                             {isRecuperarMode ? (
                                 <button
@@ -337,6 +349,8 @@ function LandingPage() {
         </div>
     );
 }
+
+// --- ROTAS DA APLICAÇÃO ---
 
 export default function App() {
     const isAuthenticated = !!localStorage.getItem('token');
