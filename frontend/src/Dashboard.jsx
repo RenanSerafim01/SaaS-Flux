@@ -1,19 +1,23 @@
 import { useState, useEffect } from 'react';
 
 export default function Dashboard() {
+
+    // == ESTADOS DA APLICAÇÃO (STATE MANAGEMENT) ==
+
+    // --- Sessão e Usuário ---
     const nomeCompleto = localStorage.getItem('nomeUsuario') || 'Usuário';
     const primeiroNome = nomeCompleto.split(' ')[0];
 
+    // --- Dados Principais (API) ---
     const [despesas, setDespesas] = useState([]);
     const [totalGastos, setTotalGastos] = useState(0);
     const [carregando, setCarregando] = useState(true);
     const [categorias, setCategorias] = useState([]);
     const [gastosFixos, setGastosFixos] = useState([]);
-
     const [rendas, setRendas] = useState([]);
     const [totalRendas, setTotalRendas] = useState(0);
 
-    // Estados de Criação
+    // --- Modais de Criação (POST) ---
     const [isModalRendaOpen, setIsModalRendaOpen] = useState(false);
     const [enviandoRenda, setEnviandoRenda] = useState(false);
     const [novaRenda, setNovaRenda] = useState({ descricao: '', valorReais: '', dataRecebimento: new Date().toISOString().split('T')[0] });
@@ -26,7 +30,7 @@ export default function Dashboard() {
     const [enviandoFixo, setEnviandoFixo] = useState(false);
     const [novoGastoFixo, setNovoGastoFixo] = useState({ descricao: '', valorReais: '', diaVencimento: '10', idCategoria: '', metodoPagamento: 'DEBITO' });
 
-    // ESTADOS DE EDIÇÃO
+    // --- Modais de Edição (PUT/DELETE) ---
     const [isModalEditarDespesaOpen, setIsModalEditarDespesaOpen] = useState(false);
     const [despesaEmEdicao, setDespesaEmEdicao] = useState(null);
 
@@ -36,23 +40,28 @@ export default function Dashboard() {
     const [isModalEditarRendaOpen, setIsModalEditarRendaOpen] = useState(false);
     const [rendaEmEdicao, setRendaEmEdicao] = useState(null);
 
+    // --- Navegação e UI ---
     const [isModalCategoriasOpen, setIsModalCategoriasOpen] = useState(false);
     const [menuMobileAberto, setMenuMobileAberto] = useState(false);
+    const [notificacao, setNotificacao] = useState({ visivel: false, mensagem: '', tipo: 'sucesso' });
 
+    // --- Paginação ---
     const [paginaDespesas, setPaginaDespesas] = useState(1);
     const [paginaFixos, setPaginaFixos] = useState(1);
     const [paginaRendas, setPaginaRendas] = useState(1);
     const [paginaCategorias, setPaginaCategorias] = useState(1);
     const itensPorPagina = 6;
 
-    const [notificacao, setNotificacao] = useState({ visivel: false, mensagem: '', tipo: 'sucesso' });
 
+    // - UTILITÁRIOS E FEEDBACK VISUAL -
     const mostrarNotificacao = (mensagem, tipo = 'sucesso') => {
         setNotificacao({ visivel: true, mensagem, tipo });
         setTimeout(() => {
             setNotificacao(prev => ({ ...prev, visivel: false }));
         }, 3000);
     };
+
+    // == REQUISIÇÕES INICIAIS (GET) ==
 
     const buscarDados = async () => {
         try {
@@ -103,9 +112,9 @@ export default function Dashboard() {
 
     useEffect(() => { buscarDados(); }, []);
 
-    // =========================================================================
-    // FUNÇÕES DE CRIAÇÃO (POST)
-    // =========================================================================
+
+    // == FUNÇÕES DE CRIAÇÃO (POST) ==
+
     const handleCadastrarRenda = async (e) => {
         e.preventDefault();
         setEnviandoRenda(true);
@@ -176,11 +185,10 @@ export default function Dashboard() {
         } catch (erro) { console.error(erro); } finally { setEnviandoFixo(false); }
     };
 
-    // =========================================================================
-    // FUNÇÕES DE EDIÇÃO E EXCLUSÃO (PUT E DELETE)
-    // =========================================================================
 
-    // --- DESPESAS ---
+    // == FUNÇÕES DE EDIÇÃO E EXCLUSÃO (PUT E DELETE) ==
+
+    // --- Despesas ---
     const abrirModalEditarDespesa = (despesa) => {
         setDespesaEmEdicao({
             ...despesa,
@@ -235,7 +243,7 @@ export default function Dashboard() {
         }
     };
 
-    // --- GASTOS FIXOS ---
+    // --- Gastos Fixos ---
     const abrirModalEditarFixo = (fixo) => {
         setFixoEmEdicao({
             ...fixo,
@@ -288,7 +296,7 @@ export default function Dashboard() {
         }
     };
 
-    // --- RENDAS ---
+    // --- Rendas ---
     const abrirModalEditarRenda = (renda) => {
         setRendaEmEdicao({
             ...renda,
@@ -338,7 +346,7 @@ export default function Dashboard() {
         }
     };
 
-    // --- CATEGORIAS ---
+    // --- Categorias ---
     const handleCriarCategoria = async () => {
         const nomeCategoria = window.prompt("Nova categoria:");
         if (!nomeCategoria) return;
@@ -380,9 +388,9 @@ export default function Dashboard() {
         }
     };
 
-    // =========================================================================
-    // FORMATAÇÃO E CÁLCULOS
-    // =========================================================================
+
+    // == FORMATAÇÃO E PROCESSAMENTO DE DADOS ==
+
     const formatarMoeda = (valor) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
     const formatarData = (dataIso) => { if (!dataIso) return '--/--/----'; return new Date(dataIso).toLocaleDateString('pt-BR', {timeZone: 'UTC'}); };
 
@@ -393,10 +401,7 @@ export default function Dashboard() {
     const corSaldoCard = saldoConsolidado >= 0 ? "from-emerald-600 to-teal-900 shadow-emerald-900/20" : "from-rose-600 to-red-900 shadow-rose-900/20";
     const totalTransacoes = despesas.length + gastosFixos.length;
 
-    // =========================================================================
-    // ORDENAÇÕES E CÁLCULOS
-    // =========================================================================
-
+    // --- Ordenações para Listagem ---
     const despesasOrdenadas = [...despesas].sort((a, b) => {
         const dateDiff = new Date(b.dataDespesa) - new Date(a.dataDespesa);
         if (dateDiff !== 0) return dateDiff;
@@ -419,16 +424,15 @@ export default function Dashboard() {
 
     const totalDespesasParaPorcentagem = resumoCategorias.reduce((acc, c) => acc + c.total, 0) || 1;
 
-    // =========================================================================
-    // FATIAMENTO DAS PÁGINAS
-    // =========================================================================
+    // --- Fatiamento das Páginas nas Tabelas ---
     const despesasAtuais = despesasOrdenadas.slice((paginaDespesas - 1) * itensPorPagina, paginaDespesas * itensPorPagina);
     const fixosAtuais = fixosOrdenados.slice((paginaFixos - 1) * itensPorPagina, paginaFixos * itensPorPagina);
     const rendasAtuais = rendasOrdenadas.slice((paginaRendas - 1) * itensPorPagina, paginaRendas * itensPorPagina);
     const categoriasAtuais = resumoCategorias.slice((paginaCategorias - 1) * 5, paginaCategorias * 5);
-    // =========================================================================
-    // CSS CLASSES
-    // =========================================================================
+
+
+    // == RENDERIZAÇÃO E ESTILOS GLOBAIS (JSX) ==
+
     const cardClass = "bg-[#131826] border border-gray-800/60 rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-7 shadow-2xl relative";
     const sidebarButton = "w-full h-[60px] px-6 bg-[#1a2133] hover:bg-sky-500 hover:text-white rounded-2xl transition-all font-bold text-sm text-gray-300 text-left flex items-center justify-between shrink-0 group";
     const inputClass = "w-full px-4 py-3 md:px-5 md:py-3.5 bg-[#0b0f19] text-white font-bold border border-gray-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none placeholder:text-gray-600";
@@ -454,6 +458,7 @@ export default function Dashboard() {
                 <div className="fixed inset-0 bg-black/80 z-40 md:hidden backdrop-blur-sm transition-opacity" onClick={() => setMenuMobileAberto(false)} />
             )}
 
+            {/* --- MENU LATERAL --- */}
             <aside className={`fixed inset-y-0 left-0 z-50 w-[280px] md:w-[340px] bg-[#131826] border-r border-gray-800/50 flex flex-col p-6 md:p-8 shadow-2xl shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${menuMobileAberto ? 'translate-x-0' : '-translate-x-full'}`}>
                 <button onClick={() => setMenuMobileAberto(false)} className="md:hidden absolute top-6 right-6 text-gray-500 hover:text-white">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -524,6 +529,7 @@ export default function Dashboard() {
                 </button>
             </aside>
 
+            {/* --- CONTEÚDO PRINCIPAL (MAIN) --- */}
             <main className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-10 relative w-full">
                 <div className="hidden md:block absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-sky-900/10 rounded-full blur-[120px] pointer-events-none"></div>
 
@@ -537,6 +543,7 @@ export default function Dashboard() {
                         </button>
                     </div>
 
+                    {/* --- CARDS SUPERIORES DE RESUMO --- */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
                         <div className={`${cardClass} flex items-center justify-between`}>
                             <div className="flex flex-col items-start min-w-0 flex-1 pr-3">
@@ -566,7 +573,7 @@ export default function Dashboard() {
                     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
                         <div className="xl:col-span-2 space-y-6 md:space-y-8">
 
-                            {/* TABELA DE DESPESAS AVULSAS */}
+                            {/* --- LISTAGEM: DESPESAS AVULSAS --- */}
                             <div className={cardClass}>
                                 <div className="flex justify-between items-center mb-4 md:mb-6">
                                     <h2 className="text-xs md:text-sm font-black text-white uppercase tracking-widest">Extrato Avulso Recente</h2>
@@ -585,7 +592,6 @@ export default function Dashboard() {
                                                 <div className="text-right flex flex-col items-end">
                                                     <p className="font-bold text-white text-sm md:text-base">- {formatarMoeda((despesa.valorCentavos || 0) / 100)}</p>
                                                 </div>
-                                                {/* BOTÃO DO LÁPIS AQUI */}
                                                 <button onClick={() => abrirModalEditarDespesa(despesa)} className="text-gray-600 hover:text-sky-500 md:opacity-0 group-hover:opacity-100 transition-all p-2" title="Editar Despesa">{iconeLapis}</button>
                                             </div>
                                         </div>
@@ -598,7 +604,7 @@ export default function Dashboard() {
                                 </div>
                             </div>
 
-                            {/* TABELA DE GASTOS FIXOS */}
+                            {/* --- LISTAGEM: GASTOS FIXOS --- */}
                             <div className={cardClass}>
                                 <h2 className="text-xs md:text-sm font-black text-white uppercase tracking-widest mb-4 md:mb-6">Extrato Fixo Mensal</h2>
                                 <div className="space-y-1">
@@ -615,7 +621,6 @@ export default function Dashboard() {
                                                 <div className="text-right flex flex-col items-end">
                                                     <p className="font-bold text-white text-sm md:text-base">- {formatarMoeda((fixo.valorCentavos / 100) || fixo.valor || 0)}</p>
                                                 </div>
-                                                {/* BOTÃO DO LÁPIS AQUI */}
                                                 <button onClick={() => abrirModalEditarFixo(fixo)} className="text-gray-600 hover:text-indigo-500 md:opacity-0 group-hover:opacity-100 transition-all p-2" title="Editar Gasto Fixo">{iconeLapis}</button>
                                             </div>
                                         </div>
@@ -630,16 +635,17 @@ export default function Dashboard() {
                         </div>
 
                         <div className="space-y-6 md:space-y-8">
+
+                            {/* --- GRÁFICO: DETALHAMENTO DE CATEGORIAS --- */}
                             <div className={cardClass}>
                                 <h2 className="text-xs md:text-sm font-black text-white uppercase tracking-widest mb-4 md:mb-6">Detalhamento de Gastos</h2>
                                 {resumoCategorias.length === 0 ? (
                                     <p className="text-gray-500 text-xs md:text-sm">Sem dados suficientes.</p>
                                 ) : (
                                     <div className="space-y-5 md:space-y-6">
-                                        {categoriasAtuais.map((cat, index) => { // <-- TROCADO AQUI PARA categoriasAtuais
+                                        {categoriasAtuais.map((cat, index) => {
                                             const porcentagem = Math.round((cat.total / totalDespesasParaPorcentagem) * 100);
                                             const bgColors = ['bg-sky-500', 'bg-indigo-500', 'bg-fuchsia-500', 'bg-orange-500', 'bg-teal-500'];
-                                            // Para manter as cores consistentes mesmo mudando de página:
                                             const corAtual = bgColors[(index + ((paginaCategorias - 1) * 5)) % bgColors.length];
 
                                             return (
@@ -660,7 +666,6 @@ export default function Dashboard() {
                                     </div>
                                 )}
 
-                                {/* ADICIONADO: PAGINAÇÃO DAS CATEGORIAS */}
                                 {resumoCategorias.length > 5 && (
                                     <div className="flex justify-between items-center mt-4 md:mt-6 pt-4 border-t border-gray-800/50 text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider">
                                         <button disabled={paginaCategorias === 1} onClick={() => setPaginaCategorias(p => p - 1)} className="hover:text-fuchsia-400 disabled:opacity-50 px-3 py-1.5 transition-colors">Anterior</button>
@@ -669,7 +674,8 @@ export default function Dashboard() {
                                     </div>
                                 )}
                             </div>
-                            {/* TABELA DE HISTÓRICO DE RENDAS */}
+
+                            {/* --- LISTAGEM: HISTÓRICO DE RENDAS --- */}
                             <div className={cardClass}>
                                 <h2 className="text-xs md:text-sm font-black text-white uppercase tracking-widest mb-4 md:mb-6">Histórico de Entradas</h2>
                                 <div className="space-y-1">
@@ -705,9 +711,8 @@ export default function Dashboard() {
                 </div>
             </main>
 
-            {/* ======================================================================= */}
-            {/* MODAIS DE CADASTRO */}
-            {/* ======================================================================= */}
+
+            {/* == MODAIS DE CRIAÇÃO (POST) == */}
 
             {isModalRendaOpen && (
                 <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-3 sm:p-4 z-[60] transition-opacity backdrop-blur-sm" onClick={() => setIsModalRendaOpen(false)}>
@@ -828,9 +833,8 @@ export default function Dashboard() {
                 </div>
             )}
 
-            {/* ======================================================================= */}
-            {/* MODAIS DE EDIÇÃO */}
-            {/* ======================================================================= */}
+
+            {/* == MODAIS DE EDIÇÃO (PUT/DELETE) == */}
 
             {isModalEditarDespesaOpen && despesaEmEdicao && (
                 <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-3 sm:p-4 z-[70] transition-opacity backdrop-blur-sm" onClick={() => setIsModalEditarDespesaOpen(false)}>
@@ -921,9 +925,10 @@ export default function Dashboard() {
                     </div>
                 </div>
             )}
-            {/* ======================================================================= */}
-            {/* TOAST DE NOTIFICAÇÃO */}
-            {/* ======================================================================= */}
+
+
+            {/* == TOAST DE NOTIFICAÇÃO (FEEDBACK GLOBAL) == */}
+
             {notificacao.visivel && (
                 <div className={`fixed top-4 right-4 md:top-10 md:right-10 z-[100] px-6 py-4 rounded-2xl shadow-2xl transform transition-all duration-300 flex items-center gap-3 border backdrop-blur-md ${
                     notificacao.tipo === 'sucesso'
