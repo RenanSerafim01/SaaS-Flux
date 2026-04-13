@@ -230,6 +230,13 @@ export default function Dashboard() {
 
     const handleAtualizarDespesa = async (e) => {
         e.preventDefault();
+
+        const hoje = new Date().toISOString().split('T')[0];
+        if (despesaEmEdicao.dataDespesa > hoje) {
+            mostrarNotificacao('Não é possível alterar para uma data futura.', 'erro');
+            return;
+        }
+
         try {
             const token = localStorage.getItem('token');
             const valorCentavos = Math.round(parseFloat(despesaEmEdicao.valorReais.replace(/\./g, '').replace(',', '.')) * 100);
@@ -336,6 +343,13 @@ export default function Dashboard() {
 
     const handleAtualizarRenda = async (e) => {
         e.preventDefault();
+
+        const hoje = new Date().toISOString().split('T')[0];
+        if (rendaEmEdicao.dataRecebimento > hoje) {
+            mostrarNotificacao('Não é possível alterar para uma data futura.', 'erro');
+            return;
+        }
+
         try {
             const token = localStorage.getItem('token');
             const valorCentavos = Math.round(parseFloat(rendaEmEdicao.valorReais.replace(/\./g, '').replace(',', '.')) * 100);
@@ -895,7 +909,7 @@ export default function Dashboard() {
                             <div><label className={labelClass}>Descrição</label><input type="text" value={despesaEmEdicao.descricao} onChange={(e) => setDespesaEmEdicao({...despesaEmEdicao, descricao: e.target.value})} className={inputClass} required /></div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div><label className={labelClass}>Valor (R$)</label><input type="text" value={despesaEmEdicao.valorReais} onChange={(e) => setDespesaEmEdicao({...despesaEmEdicao, valorReais: e.target.value})} className={inputClass} required /></div>
-                                <div><label className={labelClass}>Data</label><input type="date" value={despesaEmEdicao.dataDespesa} onChange={(e) => setDespesaEmEdicao({...despesaEmEdicao, dataDespesa: e.target.value})} className={inputClass} required /></div>
+                                <div><label className={labelClass}>Data</label><input type="date" max={new Date().toISOString().split('T')[0]} value={despesaEmEdicao.dataDespesa} onChange={(e) => setDespesaEmEdicao({...despesaEmEdicao, dataDespesa: e.target.value})} className={inputClass} required /></div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -965,7 +979,7 @@ export default function Dashboard() {
                             <div><label className={labelClass}>Descrição</label><input type="text" value={rendaEmEdicao.descricao} onChange={(e) => setRendaEmEdicao({...rendaEmEdicao, descricao: e.target.value})} className={inputClass} required /></div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div><label className={labelClass}>Valor (R$)</label><input type="text" value={rendaEmEdicao.valorReais} onChange={(e) => setRendaEmEdicao({...rendaEmEdicao, valorReais: e.target.value})} className={inputClass} required /></div>
-                                <div><label className={labelClass}>Data</label><input type="date" value={rendaEmEdicao.dataRecebimento} onChange={(e) => setRendaEmEdicao({...rendaEmEdicao, dataRecebimento: e.target.value})} className={inputClass} required /></div>
+                                <div><label className={labelClass}>Data</label><input type="date" max={new Date().toISOString().split('T')[0]} value={rendaEmEdicao.dataRecebimento} onChange={(e) => setRendaEmEdicao({...rendaEmEdicao, dataRecebimento: e.target.value})} className={inputClass} required /></div>
                             </div>
                             <div className="grid grid-cols-3 gap-3 mt-6 pt-4 border-t border-gray-800/50">
                                 <button type="button" onClick={() => setIsModalEditarRendaOpen(false)} className="w-full py-3 font-bold text-gray-400 border border-gray-800 rounded-xl hover:bg-gray-800 text-[10px] uppercase">Cancelar</button>
