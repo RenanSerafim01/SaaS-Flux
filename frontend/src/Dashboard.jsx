@@ -459,6 +459,7 @@ export default function Dashboard() {
             )}
 
             {/* --- MENU LATERAL --- */}
+
             <aside className={`fixed inset-y-0 left-0 z-50 w-[280px] md:w-[340px] bg-[#131826] border-r border-gray-800/50 flex flex-col p-6 md:p-8 shadow-2xl shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${menuMobileAberto ? 'translate-x-0' : '-translate-x-full'}`}>
                 <button onClick={() => setMenuMobileAberto(false)} className="md:hidden absolute top-6 right-6 text-gray-500 hover:text-white">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -530,6 +531,7 @@ export default function Dashboard() {
             </aside>
 
             {/* --- CONTEÚDO PRINCIPAL (MAIN) --- */}
+
             <main className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-10 relative w-full">
                 <div className="hidden md:block absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-sky-900/10 rounded-full blur-[120px] pointer-events-none"></div>
 
@@ -544,6 +546,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* --- CARDS SUPERIORES DE RESUMO --- */}
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
                         <div className={`${cardClass} flex items-center justify-between`}>
                             <div className="flex flex-col items-start min-w-0 flex-1 pr-3">
@@ -574,63 +577,83 @@ export default function Dashboard() {
                         <div className="xl:col-span-2 space-y-6 md:space-y-8">
 
                             {/* --- LISTAGEM: DESPESAS AVULSAS --- */}
+
                             <div className={cardClass}>
                                 <div className="flex justify-between items-center mb-4 md:mb-6">
                                     <h2 className="text-xs md:text-sm font-black text-white uppercase tracking-widest">Extrato Avulso Recente</h2>
                                 </div>
+
                                 <div className="space-y-1">
-                                    {carregando ? <p className="text-gray-500 py-4 text-sm">Buscando...</p> : despesasAtuais.map((despesa, index) => (
-                                        <div key={index} className="group flex justify-between items-center py-3 md:py-4 border-b border-gray-800/50 hover:bg-[#1a2133] rounded-xl px-2 md:px-4 transition-colors gap-3">
-                                            <div className="flex flex-col flex-1 min-w-0">
-                                                <p className="font-extrabold text-xs md:text-sm text-gray-200 truncate">{despesa.descricao || 'Sem nome'}</p>
-                                                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                                    <span className="text-[9px] md:text-[10px] font-bold text-sky-400 bg-sky-400/10 px-2 py-0.5 rounded uppercase truncate max-w-[120px]">{despesa.categoria?.nome || 'Geral'}</span>
-                                                    <span className="text-[10px] md:text-[11px] font-medium text-gray-500 shrink-0">{formatarData(despesa.dataDespesa)}</span>
+                                    {carregando ? (
+                                        <p className="text-gray-500 py-4 text-sm">Buscando...</p>
+                                    ) : despesasAtuais.length === 0 ? (
+                                        <p className="text-gray-500 text-xs py-2">Nenhum gasto avulso registrado.</p>
+                                    ) : (
+                                        despesasAtuais.map((despesa, index) => (
+                                            <div key={index} className="group flex justify-between items-center py-3 md:py-4 border-b border-gray-800/50 hover:bg-[#1a2133] rounded-xl px-2 md:px-4 transition-colors gap-3">
+                                                <div className="flex flex-col flex-1 min-w-0">
+                                                    <p className="font-extrabold text-xs md:text-sm text-gray-200 truncate">{despesa.descricao || 'Sem nome'}</p>
+                                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                        <span className="text-[9px] md:text-[10px] font-bold text-sky-400 bg-sky-400/10 px-2 py-0.5 rounded uppercase truncate max-w-[120px]">{despesa.categoria?.nome || 'Geral'}</span>
+                                                        <span className="text-[10px] md:text-[11px] font-medium text-gray-500 shrink-0">{formatarData(despesa.dataDespesa)}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 md:gap-6 shrink-0">
+                                                    <div className="text-right flex flex-col items-end">
+                                                        <p className="font-bold text-white text-sm md:text-base">- {formatarMoeda((despesa.valorCentavos || 0) / 100)}</p>
+                                                    </div>
+                                                    <button onClick={() => abrirModalEditarDespesa(despesa)} className="text-gray-600 hover:text-sky-500 md:opacity-0 group-hover:opacity-100 transition-all p-2" title="Editar Despesa">{iconeLapis}</button>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2 md:gap-6 shrink-0">
-                                                <div className="text-right flex flex-col items-end">
-                                                    <p className="font-bold text-white text-sm md:text-base">- {formatarMoeda((despesa.valorCentavos || 0) / 100)}</p>
-                                                </div>
-                                                <button onClick={() => abrirModalEditarDespesa(despesa)} className="text-gray-600 hover:text-sky-500 md:opacity-0 group-hover:opacity-100 transition-all p-2" title="Editar Despesa">{iconeLapis}</button>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ))
+                                    )}
                                 </div>
-                                <div className="flex justify-between items-center mt-4 md:mt-6 pt-4 text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    <button disabled={paginaDespesas === 1} onClick={() => setPaginaDespesas(p => p - 1)} className="hover:text-sky-400 disabled:opacity-50 px-3 py-1.5">Anterior</button>
-                                    <span>Pág {paginaDespesas}</span>
-                                    <button disabled={despesas.length <= paginaDespesas * itensPorPagina} onClick={() => setPaginaDespesas(p => p + 1)} className="hover:text-sky-400 disabled:opacity-50 px-3 py-1.5">Próxima</button>
-                                </div>
+
+                                {despesasOrdenadas.length > 0 && (
+                                    <div className="flex justify-between items-center mt-4 md:mt-6 pt-4 text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        <button disabled={paginaDespesas === 1} onClick={() => setPaginaDespesas(p => p - 1)} className="hover:text-sky-400 disabled:opacity-50 px-3 py-1.5">Anterior</button>
+                                        <span>Pág {paginaDespesas}</span>
+                                        <button disabled={despesas.length <= paginaDespesas * itensPorPagina} onClick={() => setPaginaDespesas(p => p + 1)} className="hover:text-sky-400 disabled:opacity-50 px-3 py-1.5">Próxima</button>
+                                    </div>
+                                )}
                             </div>
 
                             {/* --- LISTAGEM: GASTOS FIXOS --- */}
+
                             <div className={cardClass}>
                                 <h2 className="text-xs md:text-sm font-black text-white uppercase tracking-widest mb-4 md:mb-6">Extrato Fixo Mensal</h2>
+
                                 <div className="space-y-1">
-                                    {fixosAtuais.map((fixo, index) => (
-                                        <div key={index} className="group flex justify-between items-center py-3 md:py-4 border-b border-gray-800/50 hover:bg-[#1a2133] rounded-xl px-2 md:px-4 transition-colors gap-3">
-                                            <div className="flex flex-col flex-1 min-w-0">
-                                                <p className="font-extrabold text-xs md:text-sm text-gray-200 truncate">{fixo.descricao || fixo.nome}</p>
-                                                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                                    <span className="text-[9px] md:text-[10px] font-bold text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded uppercase truncate max-w-[120px]">{fixo.categoria?.nome || fixo.categoria?.category_name || 'Geral'}</span>
-                                                    <span className="text-[10px] md:text-[11px] font-medium text-gray-500 shrink-0">Dia {fixo.diaVencimento || fixo.data}</span>
+                                    {fixosAtuais.length === 0 ? (
+                                        <p className="text-gray-500 text-xs py-2">Nenhum gasto fixo registrado.</p>
+                                    ) : (
+                                        fixosAtuais.map((fixo, index) => (
+                                            <div key={index} className="group flex justify-between items-center py-3 md:py-4 border-b border-gray-800/50 hover:bg-[#1a2133] rounded-xl px-2 md:px-4 transition-colors gap-3">
+                                                <div className="flex flex-col flex-1 min-w-0">
+                                                    <p className="font-extrabold text-xs md:text-sm text-gray-200 truncate">{fixo.descricao || fixo.nome}</p>
+                                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                        <span className="text-[9px] md:text-[10px] font-bold text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded uppercase truncate max-w-[120px]">{fixo.categoria?.nome || fixo.categoria?.category_name || 'Geral'}</span>
+                                                        <span className="text-[10px] md:text-[11px] font-medium text-gray-500 shrink-0">Dia {fixo.diaVencimento || fixo.data}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 md:gap-6 shrink-0">
+                                                    <div className="text-right flex flex-col items-end">
+                                                        <p className="font-bold text-white text-sm md:text-base">- {formatarMoeda((fixo.valorCentavos / 100) || fixo.valor || 0)}</p>
+                                                    </div>
+                                                    <button onClick={() => abrirModalEditarFixo(fixo)} className="text-gray-600 hover:text-indigo-500 md:opacity-0 group-hover:opacity-100 transition-all p-2" title="Editar Gasto Fixo">{iconeLapis}</button>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2 md:gap-6 shrink-0">
-                                                <div className="text-right flex flex-col items-end">
-                                                    <p className="font-bold text-white text-sm md:text-base">- {formatarMoeda((fixo.valorCentavos / 100) || fixo.valor || 0)}</p>
-                                                </div>
-                                                <button onClick={() => abrirModalEditarFixo(fixo)} className="text-gray-600 hover:text-indigo-500 md:opacity-0 group-hover:opacity-100 transition-all p-2" title="Editar Gasto Fixo">{iconeLapis}</button>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ))
+                                    )}
                                 </div>
-                                <div className="flex justify-between items-center mt-4 md:mt-6 pt-4 text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    <button disabled={paginaFixos === 1} onClick={() => setPaginaFixos(p => p - 1)} className="hover:text-sky-400 disabled:opacity-50 px-3 py-1.5">Anterior</button>
-                                    <span>Pág {paginaFixos}</span>
-                                    <button disabled={gastosFixos.length <= paginaFixos * itensPorPagina} onClick={() => setPaginaFixos(p => p + 1)} className="hover:text-sky-400 disabled:opacity-50 px-3 py-1.5">Próxima</button>
-                                </div>
+
+                                {fixosOrdenados.length > 0 && (
+                                    <div className="flex justify-between items-center mt-4 md:mt-6 pt-4 text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        <button disabled={paginaFixos === 1} onClick={() => setPaginaFixos(p => p - 1)} className="hover:text-sky-400 disabled:opacity-50 px-3 py-1.5">Anterior</button>
+                                        <span>Pág {paginaFixos}</span>
+                                        <button disabled={gastosFixos.length <= paginaFixos * itensPorPagina} onClick={() => setPaginaFixos(p => p + 1)} className="hover:text-sky-400 disabled:opacity-50 px-3 py-1.5">Próxima</button>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -927,7 +950,7 @@ export default function Dashboard() {
             )}
 
 
-            {/* == TOAST DE NOTIFICAÇÃO (FEEDBACK GLOBAL) == */}
+            {/* == TOAST DE NOTIFICAÇÃO == */}
 
             {notificacao.visivel && (
                 <div className={`fixed top-4 right-4 md:top-10 md:right-10 z-[100] px-6 py-4 rounded-2xl shadow-2xl transform transition-all duration-300 flex items-center gap-3 border backdrop-blur-md ${
