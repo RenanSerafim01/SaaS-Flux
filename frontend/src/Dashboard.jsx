@@ -117,6 +117,13 @@ export default function Dashboard() {
 
     const handleCadastrarRenda = async (e) => {
         e.preventDefault();
+
+        const hoje = new Date().toISOString().split('T')[0];
+        if (novaRenda.dataRecebimento > hoje) {
+            mostrarNotificacao('Não é possível registrar entradas no futuro.', 'erro');
+            return;
+        }
+
         setEnviandoRenda(true);
         try {
             const token = localStorage.getItem('token');
@@ -135,23 +142,37 @@ export default function Dashboard() {
                 setPaginaRendas(1);
                 mostrarNotificacao('Renda registrada com sucesso!');
             } else {
-                alert(`Erro do Servidor: ${await resposta.text() || resposta.status}`);
+                mostrarNotificacao('Erro ao registrar: Verifique os dados.', 'erro');
             }
-        } catch (erro) { console.error(erro); } finally { setEnviandoRenda(false); }
+        } catch (erro) {
+            console.error(erro);
+            mostrarNotificacao('Erro de conexão com o servidor.', 'erro');
+        } finally {
+            setEnviandoRenda(false);
+        }
     };
 
     const handleCadastrarDespesa = async (e) => {
         e.preventDefault();
+
+        const hoje = new Date().toISOString().split('T')[0];
+        if (novaDespesa.dataDespesa > hoje) {
+            mostrarNotificacao('Não é possível registrar gastos no futuro.', 'erro');
+            return;
+        }
+
         setEnviandoForm(true);
         try {
             const token = localStorage.getItem('token');
             const valorCentavos = Math.round(parseFloat(novaDespesa.valorReais.replace(/\./g, '').replace(',', '.')) * 100);
             const dataFormatada = new Date(`${novaDespesa.dataDespesa}T00:00:00Z`).toISOString();
+
             const resposta = await fetch(`${import.meta.env.VITE_API_URL}/despesas`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ descricao: novaDespesa.descricao, valorCentavos, dataDespesa: dataFormatada, idCategoria: parseInt(novaDespesa.idCategoria), metodoPagamento: novaDespesa.metodoPagamento })
             });
+
             if (resposta.ok) {
                 const primeiraCatId = categorias.length > 0 ? categorias[0].id.toString() : '';
                 setNovaDespesa({ descricao: '', valorReais: '', dataDespesa: new Date().toISOString().split('T')[0], idCategoria: primeiraCatId, metodoPagamento: 'PIX' });
@@ -159,8 +180,15 @@ export default function Dashboard() {
                 buscarDados();
                 setPaginaDespesas(1);
                 mostrarNotificacao('Gasto registrado com sucesso!');
+            } else {
+                mostrarNotificacao('Erro ao registrar: Verifique os dados.', 'erro');
             }
-        } catch (erro) { console.error(erro); } finally { setEnviandoForm(false); }
+        } catch (erro) {
+            console.error(erro);
+            mostrarNotificacao('Erro de conexão com o servidor.', 'erro');
+        } finally {
+            setEnviandoForm(false);
+        }
     };
 
     const handleCadastrarGastoFixo = async (e) => {
@@ -750,7 +778,7 @@ export default function Dashboard() {
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div><label className={labelClass}>Valor (R$)</label><input type="text" value={novaRenda.valorReais} onChange={(e) => setNovaRenda({...novaRenda, valorReais: e.target.value})} className={inputClass} placeholder="Ex: 5000,00" required /></div>
-                                <div><label className={labelClass}>Data de Recebimento</label><input type="date" value={novaRenda.dataRecebimento} onChange={(e) => setNovaRenda({...novaRenda, dataRecebimento: e.target.value})} className={inputClass} required /></div>
+                                <div><label className={labelClass}>Data de Recebimento</label><input type="date" max={new Date().toISOString().split('T')[0]} value={novaRenda.dataRecebimento} onChange={(e) => setNovaRenda({...novaRenda, dataRecebimento: e.target.value})} className={inputClass} required /></div>
                             </div>
                             <div className="grid grid-cols-2 gap-3 md:gap-4 mt-6 md:mt-8 pt-4 border-t border-gray-800/50">
                                 <button type="button" onClick={() => setIsModalRendaOpen(false)} className="w-full px-4 py-3 font-bold text-gray-400 bg-transparent border border-gray-800 rounded-full hover:bg-gray-800 uppercase text-[10px]">Cancelar</button>
@@ -769,7 +797,7 @@ export default function Dashboard() {
                             <div><label className={labelClass}>Descrição</label><input type="text" value={novaDespesa.descricao} onChange={(e) => setNovaDespesa({...novaDespesa, descricao: e.target.value})} className={inputClass} placeholder="Ex: Mercado Semanal" required /></div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div><label className={labelClass}>Valor (R$)</label><input type="text" value={novaDespesa.valorReais} onChange={(e) => setNovaDespesa({...novaDespesa, valorReais: e.target.value})} className={inputClass} placeholder="Ex: 150,00" required /></div>
-                                <div><label className={labelClass}>Data</label><input type="date" value={novaDespesa.dataDespesa} onChange={(e) => setNovaDespesa({...novaDespesa, dataDespesa: e.target.value})} className={inputClass} required /></div>
+                                <div><label className={labelClass}>Data</label><input type="date" max={new Date().toISOString().split('T')[0]} value={novaDespesa.dataDespesa} onChange={(e) => setNovaDespesa({...novaDespesa, dataDespesa: e.target.value})} className={inputClass} required /></div>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div><label className={labelClass}>Categoria</label><div className="flex gap-2"><select value={novaDespesa.idCategoria} onChange={(e) => setNovaDespesa({...novaDespesa, idCategoria: e.target.value})} className={`${inputClass} appearance-none flex-grow custom-scrollbar`}><optgroup label="SISTEMA" className="text-sky-400">{categorias.filter(c => c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}</optgroup><optgroup label="PESSOAL" className="text-fuchsia-400">{categorias.filter(c => !c.isGlobal).map(c => <option key={c.id} value={c.id} className="text-white">{c.nome || c.category_name}</option>)}</optgroup></select><button type="button" onClick={handleCriarCategoria} className="bg-[#1a2133] border border-gray-800 text-white font-bold rounded-xl px-4 hover:bg-sky-500 shrink-0">+</button></div></div>
