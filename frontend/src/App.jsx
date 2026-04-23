@@ -175,7 +175,7 @@ function LandingPage() {
                         <span className="bg-[#1a2133] text-sky-400 text-[8px] px-2 py-0.5 rounded-sm font-black tracking-widest self-center md:self-start md:mt-2 border border-gray-800">BETA</span>
                     </div>
                     <button onClick={() => setIsLoginModalOpen(true)} className="px-4 py-2 md:px-6 md:py-2.5 bg-sky-500 text-white font-extrabold text-[10px] md:text-xs rounded-xl uppercase tracking-wider hover:bg-sky-400 transition shadow-lg hover:shadow-sky-500/20">
-                        Acessar Sistema
+                        Acessar o Sistema
                     </button>
                 </nav>
             </header>
