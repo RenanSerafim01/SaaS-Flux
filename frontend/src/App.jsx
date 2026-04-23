@@ -25,7 +25,6 @@ function LandingPage() {
     const [isLoginMode, setIsLoginMode] = useState(true);
     const [isRecuperarMode, setIsRecuperarMode] = useState(false);
 
-    // [ALTERADO] Estados para controlar a visibilidade das senhas (o olhinho)
     const [mostrarSenha, setMostrarSenha] = useState(false);
     const [mostrarConfirmaSenha, setMostrarConfirmaSenha] = useState(false);
 
@@ -48,7 +47,6 @@ function LandingPage() {
         setSenha('');
         setConfirmaSenha('');
         setMensagem({ texto: '', tipo: '' });
-        // [ALTERADO] Resetar visibilidade ao fechar
         setMostrarSenha(false);
         setMostrarConfirmaSenha(false);
     };
@@ -249,12 +247,10 @@ function LandingPage() {
             {isLoginModalOpen && (
                 <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-50 transition-opacity backdrop-blur-sm" onClick={fecharModal}>
 
-                    {/* [ALTERADO] Container principal com design Split Screen e tema escuro integral */}
                     <div className="w-full max-w-4xl bg-[#131826] rounded-[1.5rem] md:rounded-[2rem] shadow-2xl relative flex flex-col md:flex-row overflow-hidden border border-gray-800/60" onClick={(e) => e.stopPropagation()}>
 
-                        {/* [ALTERADO] LADO ESQUERDO: Branding - Oculto no celular */}
                         <div className="hidden md:flex md:w-1/2 bg-[#0b0f19] border-r border-gray-800/60 p-12 text-white flex-col justify-between relative">
-                            {/* Brilho de fundo sutil */}
+
                             <div className="absolute top-0 right-0 w-64 h-64 bg-sky-900/10 rounded-full blur-[80px] pointer-events-none"></div>
 
                             <div className="flex items-center gap-3 relative z-10">
@@ -292,13 +288,12 @@ function LandingPage() {
                             </div>
                         </div>
 
-                        {/* [ALTERADO] LADO DIREITO: O Formulário (Dark Mode, sem botão Google, com logo e olho na senha) */}
                         <div className="w-full md:w-1/2 p-6 md:p-12 flex flex-col justify-center relative">
-
                             <button onClick={fecharModal} className="absolute top-4 md:top-6 right-4 md:right-6 text-gray-500 hover:text-white transition font-bold text-xl md:text-2xl leading-none">&times;</button>
 
                             {/* Cabeçalho do form com a Logo */}
                             <div className="mb-8 flex items-center gap-3">
+
                                 {/* Exibe a logo apenas no mobile, já que no desktop ela fica no lado esquerdo */}
                                 <div className="md:hidden flex items-center justify-center w-10 h-10 bg-gradient-to-br from-[#0b0f19] to-[#1a2133] rounded-xl border border-gray-800 shadow-lg shrink-0 overflow-hidden">
                                     <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -359,6 +354,7 @@ function LandingPage() {
                                                 placeholder="••••••••••"
                                                 required
                                             />
+
                                             {/* Botão de Mostrar/Ocultar Senha */}
                                             <button
                                                 type="button"
@@ -434,7 +430,6 @@ function LandingPage() {
                                 </div>
                             </form>
 
-                            {/* [ALTERADO] Alternância de Modos com cores destacadas na palavra clicável */}
                             <div className="mt-8 text-center text-[10px] md:text-xs font-bold tracking-wider uppercase">
                                 {isRecuperarMode ? (
                                     <span
